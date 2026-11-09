@@ -120,6 +120,8 @@ main.in{padding-block:4px calc(116px + env(safe-area-inset-bottom,0px))}
 .pword{font-size:14px;margin-top:10px;min-height:20px}
 .pword b{font-variant-numeric:tabular-nums}
 .slpain{display:flex;flex-wrap:wrap;gap:8px;padding:2px 0 4px}
+.sxadd{display:flex;gap:8px;align-items:center;margin-top:10px}
+.sxadd .fld{flex:1;min-width:0}
 .slavg{font-size:13px;color:var(--sub);padding:12px 0 2px}
 
 /* chips and fields */
@@ -439,7 +441,7 @@ function defaultLib(){
       {id:"i_serpent", kind:"order", name:"Bacon cheeseburger with sweet potato fries", place:"Serpent Salt", uses:0, last:0},
       sbItem()
     ],
-    settings: {slotTimes:{Breakfast:"08:00", Lunch:"12:30", Snack:"15:30", Dinner:"18:30"}, windowH:12, waterGoal:64, lastDrink:null, seedSb:true, containers: DEF_CONT, sleepGoal:8, lastBed:"", lastWake:"", painMin:5},
+    settings: {slotTimes:{Breakfast:"08:00", Lunch:"12:30", Snack:"15:30", Dinner:"18:30"}, windowH:12, waterGoal:64, lastDrink:null, seedSb:true, containers: DEF_CONT, sleepGoal:8, lastBed:"", lastWake:"", painMin:5, customSymptoms:[]},
     touched: false
   };
 }
@@ -456,7 +458,7 @@ function mergeLib(l){
   if(!s.seedSb && !items.some(function(i){ return i.id === "i_starbucks"; })) items.push(sbItem());
   return {
     items: items,
-    settings: {slotTimes: Object.assign({}, d.settings.slotTimes, s.slotTimes || {}), windowH: s.windowH || 12, waterGoal: s.waterGoal || 64, lastDrink: s.lastDrink || null, seedSb: true, containers: (Array.isArray(s.containers) && s.containers.length && contKey(s.containers) !== OLD_CONT_KEY) ? s.containers : DEF_CONT, sleepGoal: s.sleepGoal || 8, lastBed: s.lastBed || "", lastWake: s.lastWake || "", painMin: (s.painMin >= 0 && s.painMin <= 10) ? s.painMin : 5},
+    settings: {slotTimes: Object.assign({}, d.settings.slotTimes, s.slotTimes || {}), windowH: s.windowH || 12, waterGoal: s.waterGoal || 64, lastDrink: s.lastDrink || null, seedSb: true, containers: (Array.isArray(s.containers) && s.containers.length && contKey(s.containers) !== OLD_CONT_KEY) ? s.containers : DEF_CONT, sleepGoal: s.sleepGoal || 8, lastBed: s.lastBed || "", lastWake: s.lastWake || "", painMin: (s.painMin >= 0 && s.painMin <= 10) ? s.painMin : 5, customSymptoms: Array.isArray(s.customSymptoms) ? s.customSymptoms.filter(function(x){ return typeof x === "string" && x; }) : []},
     touched: !!(l && l.touched)
   };
 }
@@ -1033,11 +1035,21 @@ function extraHTML(){
 function noteHTML(){
   return '<div class="lab">Note</div><textarea class="fld" id="sNote" rows="2" placeholder="Anything else worth remembering">' + esc(S.note) + '</textarea>';
 }
+function allSx(){
+  var out = SYMPTOMS.slice(), seen = {};
+  out.forEach(function(k){ seen[k.toLowerCase()] = 1; });
+  (state.lib.settings.customSymptoms || []).forEach(function(k){ if(!seen[k.toLowerCase()]){ seen[k.toLowerCase()] = 1; out.push(k); } });
+  if(S && S.sx) Object.keys(S.sx).forEach(function(k){ if(!seen[k.toLowerCase()]){ seen[k.toLowerCase()] = 1; out.push(k); } });
+  return out;
+}
 function sxHTML(){
-  return '<div class="lab">What are you feeling?</div><div class="row">' + SYMPTOMS.map(function(k){
+  var add = S.sxAdding
+    ? '<div class="sxadd"><input class="fld" id="sxNew" maxlength="40" placeholder="Name of the symptom" autocomplete="off"><button class="chip on" data-act="sxadd">Add</button><button class="chip" data-act="sxcancel">Cancel</button></div>'
+    : '<div class="row" style="margin-top:10px"><button class="chip small" data-act="sxnew">+ Add your own symptom</button></div>';
+  return '<div class="lab">What are you feeling?</div><div class="row">' + allSx().map(function(k){
     var v = S.sx[k] || 0;
     return '<button class="chip' + (v ? ' on' : '') + '" data-act="sx" data-v="' + esc(k) + '" aria-pressed="' + !!v + '"' + (v ? ' aria-label="' + esc(k + ", " + SEV[v - 1].toLowerCase()) + '"' : '') + '>' + esc(k) + (v ? dotsHTML(v) : '') + '</button>';
-  }).join("") + '</div><p class="hint">Tap once for mild, again for moderate, again for strong, again to clear.</p>';
+  }).join("") + '</div>' + add + '<p class="hint">Tap once for mild, again for moderate, again for strong, again to clear.</p>';
 }
 function bmHTML(){
   var h = '<div class="lab">Stool type</div><ul class="bl">';
@@ -1066,6 +1078,7 @@ function settingsHTML(){
   var h = '<div class="lab">Usual meal times</div>';
   SLOTS.forEach(function(s){ h += '<label class="srow">' + s + '<input class="fld" type="time" data-slot="' + s + '" value="' + esc(st.slotTimes[s]) + '"></label>'; });
   h += '<div class="lab">Daily drink goal</div><label class="srow">Ounces per day<input class="fld" type="number" inputmode="numeric" min="8" step="8" data-goal value="' + (st.waterGoal || 64) + '"></label>';
+  h += '<div class="lab">My symptoms</div><label for="stSx" class="hint" style="display:block;margin:0 0 6px">Symptoms you added, one per line. Delete a line to remove it. Entries you already saved keep it.</label><textarea class="fld" id="stSx" rows="4" data-customsx placeholder="Nothing added yet">' + esc((st.customSymptoms || []).join("\n")) + '</textarea>';
   h += '<div class="lab">Pain</div><label class="srow">Count as a reaction at or above<input class="fld" type="number" inputmode="numeric" min="1" max="10" step="1" data-painmin value="' + (st.painMin || 5) + '"></label><p class="hint">A pain check at this level or higher is treated like a symptom in Patterns, out of 10.</p>';
   h += '<div class="lab">Sleep goal</div><label class="srow">Hours per night<input class="fld" type="number" inputmode="decimal" min="4" max="12" step="0.5" data-sleepgoal value="' + (st.sleepGoal || 8) + '"></label>';
   h += '<div class="lab">My containers</div><label for="stCont" class="hint" style="display:block;margin:0 0 6px">One per line, name and ounces. These show up as buttons when you log a drink.</label><textarea class="fld" id="stCont" rows="5" data-containers>' + esc(sizesText(st.containers || DEF_CONT)) + '</textarea>';
@@ -1295,6 +1308,18 @@ var H = {
   },
   full: function(b, v){ S.fullness = S.fullness === v ? "" : v; paintExtra(); },
   feel: function(b, v){ var i = S.feelings.indexOf(v); if(i > -1) S.feelings.splice(i, 1); else S.feelings.push(v); paintExtra(); },
+  sxnew: function(){ S.sxAdding = true; paint("sSx", sxHTML()); var i = $("sxNew"); if(i) i.focus(); },
+  sxcancel: function(){ S.sxAdding = false; paint("sSx", sxHTML()); },
+  sxadd: function(){
+    var i = $("sxNew"), v = i ? i.value.replace(/\s+/g, " ").trim() : "";
+    if(!v){ toast("Type a name first"); return; }
+    var have = null;
+    allSx().forEach(function(k){ if(k.toLowerCase() === v.toLowerCase()) have = k; });
+    if(have){ S.sx[have] = S.sx[have] || 1; S.sxAdding = false; paint("sSx", sxHTML()); toast("That one is already in the list"); return; }
+    var cs = (state.lib.settings.customSymptoms || []).slice(); cs.push(v);
+    state.lib.settings.customSymptoms = cs; touchLib();
+    S.sx[v] = 1; S.sxAdding = false; paint("sSx", sxHTML());
+  },
   sx: function(b, v){ var n = (S.sx[v] || 0) + 1; if(n > 3) delete S.sx[v]; else S.sx[v] = n; paint("sSx", sxHTML()); },
   bristol: function(b, v){ S.bristol = S.bristol === +v ? 0 : +v; paint("sBm", bmHTML()); },
   flag: function(b, v){ var i = S.flags.indexOf(v); if(i > -1) S.flags.splice(i, 1); else S.flags.push(v); paint("sBm", bmHTML()); },
@@ -1322,6 +1347,9 @@ $("shBody").addEventListener("change", function(e){
     var it = findItem(v);
     if(it){ addToPlate(it); paintPlate(); paintTiles(); }
   }
+});
+$("shBody").addEventListener("keydown", function(e){
+  if(e.key === "Enter" && e.target && e.target.id === "sxNew"){ e.preventDefault(); H.sxadd(); }
 });
 $("shBody").addEventListener("input", function(e){
   var t = e.target;
@@ -1354,6 +1382,10 @@ $("shBody").addEventListener("change", function(e){
     var td = dayKey(Date.now()), k = t.value > td ? td : t.value, b2 = S.live ? Date.now() : S.t;
     S.live = false; S.t = withDay(b2, k);
     paintTime();
+  }else if(t.hasAttribute("data-customsx")){
+    var seenX = {}; SYMPTOMS.forEach(function(k){ seenX[k.toLowerCase()] = 1; });
+    state.lib.settings.customSymptoms = t.value.split("\n").map(function(x){ return x.replace(/\s+/g, " ").trim().slice(0, 40); }).filter(function(x){ if(!x || seenX[x.toLowerCase()]) return false; seenX[x.toLowerCase()] = 1; return true; });
+    touchLib();
   }else if(t.hasAttribute("data-painmin")){
     var pm = parseInt(t.value, 10);
     if(pm >= 1 && pm <= 10){ state.lib.settings.painMin = pm; touchLib(); }
@@ -1436,7 +1468,7 @@ function saveSheetInner(){
     e = {id: S.id || uid("e_"), type: "sleep", t: t, start: S.bed, nap: !!S.nap, quality: S.quality || 0, wakes: S.wakes == null ? null : S.wakes, feel: S.feel || "", flags: S.flags.slice(), note: S.note.trim()};
     if(!S.nap){ state.lib.settings.lastBed = S.bedTod; state.lib.settings.lastWake = hhmm(S.t); touchLib(); }
   }else if(S.type === "symptom"){
-    var sy = SYMPTOMS.filter(function(k){ return S.sx[k]; }).map(function(k){ return {k: k, sev: S.sx[k]}; });
+    var sy = allSx().filter(function(k){ return S.sx[k]; }).map(function(k){ return {k: k, sev: S.sx[k]}; });
     if(!sy.length){ toast("Pick at least one symptom"); return; }
     e = {id: S.id || uid("e_"), type: "symptom", t: t, symptoms: sy, note: S.note.trim()};
   }else{
