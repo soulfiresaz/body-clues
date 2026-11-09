@@ -1,0 +1,1598 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FBF8F3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1B1A18" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Body Clues">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>Body Clues</title>
+<style>
+/* Layout: sticky header with the day, a chronological day timeline, three big log buttons pinned to the bottom, full-screen sheets for each entry type. Palette follows the Intention Net planners: warm paper, quiet ink, one calm teal, with red for symptoms and amber for bathroom. */
+:root{
+  --paper:#FBF8F3; --box:#F1EBE0; --line:#DDD6CA; --ink:#2B2A28; --sub:#6B6660;
+  --accent:#2F7A72; --accent-soft:#E0EEEB; --on-accent:#FFFFFF;
+  --symp:#B24A3A; --symp-soft:#F6E5E1; --on-symp:#FFFFFF;
+  --bm:#8A6420; --bm-soft:#F2E8D0; --on-bm:#FFFFFF;
+  --drink:#35639E; --drink-soft:#E2EAF4; --on-drink:#FFFFFF;
+  --sleep:#5B5BA6; --sleep-soft:#E7E7F5; --on-sleep:#FFFFFF;
+  --scrim:rgba(43,42,40,.45);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#1B1A18; --box:#262420; --line:#3A3733; --ink:#EDE7DD; --sub:#A39C92;
+    --accent:#5FB5AA; --accent-soft:#1F3430; --on-accent:#0F211E;
+    --symp:#E58C7C; --symp-soft:#3A2420; --on-symp:#2A1410;
+    --bm:#D9AE5B; --bm-soft:#352B17; --on-bm:#241A07;
+    --drink:#7FB0E0; --drink-soft:#1E2B3A; --on-drink:#0E1B2A;
+    --sleep:#A9A9EC; --sleep-soft:#25253F; --on-sleep:#14142B;
+    --scrim:rgba(0,0,0,.6);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#1B1A18; --box:#262420; --line:#3A3733; --ink:#EDE7DD; --sub:#A39C92;
+  --accent:#5FB5AA; --accent-soft:#1F3430; --on-accent:#0F211E;
+  --symp:#E58C7C; --symp-soft:#3A2420; --on-symp:#2A1410;
+  --bm:#D9AE5B; --bm-soft:#352B17; --on-bm:#241A07;
+    --drink:#7FB0E0; --drink-soft:#1E2B3A; --on-drink:#0E1B2A;
+    --sleep:#A9A9EC; --sleep-soft:#25253F; --on-sleep:#14142B;
+  --scrim:rgba(0,0,0,.6);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--paper);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.4;-webkit-tap-highlight-color:transparent}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--paper);z-index:30}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--a,var(--accent));outline-offset:2px}
+.in{width:100%;max-width:640px;margin-inline:auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* header */
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--paper);border-bottom:1px solid var(--line)}
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-block:12px 8px}
+h1{margin:0;font-size:20px;font-weight:750;letter-spacing:-.01em}
+.icon-btn{width:44px;height:44px;margin-right:-10px;border:0;background:transparent;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--sub)}
+.icon-btn:active{background:var(--box)}
+.seg{display:flex;border:1.5px solid var(--accent);border-radius:999px;overflow:hidden;margin-bottom:10px}
+.seg button{flex:1;border:0;background:transparent;padding:8px 6px;font-weight:700;font-size:14px;color:var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+.daynav{display:flex;align-items:center;gap:6px;padding-bottom:10px}
+.nav{width:44px;height:44px;border:1.5px solid var(--line);background:var(--paper);border-radius:12px;font-size:22px;font-weight:700;line-height:1;color:var(--ink)}
+.nav:disabled{opacity:.35}
+.dlabel{position:relative;flex:1;min-width:0;display:flex;align-items:center;justify-content:center;height:44px;border-radius:12px;background:var(--box);font-weight:700;font-size:16px}
+.dlabel input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+
+/* timeline */
+main.in{padding-block:4px calc(116px + env(safe-area-inset-bottom,0px))}
+.daysum{font-size:13px;color:var(--sub);padding:12px 0 6px}
+.tl{list-style:none;margin:0;padding:0}
+.ev{display:grid;grid-template-columns:58px minmax(0,1fr);gap:12px;padding:14px 0;border-bottom:1px solid var(--line);cursor:pointer;scroll-margin-top:180px;scroll-margin-bottom:130px}
+.ev:active{background:var(--box)}
+.tm{font-variant-numeric:tabular-nums;font-weight:750;font-size:15px;line-height:1.2}
+.tm span{display:block;font-size:11px;font-weight:750;color:var(--sub);letter-spacing:.05em}
+.kind{font-size:11.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase}
+.k-food{color:var(--accent)} .k-symptom{color:var(--symp)} .k-bm{color:var(--bm)} .k-drink{color:var(--drink)} .k-sleep{color:var(--sleep)} .k-pain{color:var(--symp)}
+.ttl{font-size:16px;font-weight:650;margin-top:2px;overflow-wrap:anywhere}
+.det{font-size:13px;color:var(--sub);margin-top:3px;overflow-wrap:anywhere}
+.det b{color:var(--ink)}
+.since{font-size:13px;margin-top:6px;overflow-wrap:anywhere}
+.since b{font-variant-numeric:tabular-nums}
+.since span{color:var(--sub)}
+.pill{display:inline-block;font-size:12px;font-weight:650;padding:2px 10px;border-radius:999px;margin:7px 6px 0 0;font-variant-numeric:tabular-nums}
+.p-symp{background:var(--symp-soft);color:var(--symp)}
+.p-bm{background:var(--bm-soft);color:var(--bm)}
+.empty{padding:44px 8px;text-align:center;color:var(--sub);line-height:1.55}
+.empty b{display:block;color:var(--ink);font-size:17px;margin-bottom:4px}
+.status{font-size:12.5px;color:var(--sub);padding:18px 0 0;text-align:center}
+
+/* dots */
+.dots{display:inline-flex;gap:3px;vertical-align:middle;margin-left:4px}
+.dots i{width:7px;height:7px;border-radius:50%;border:1.5px solid currentColor;opacity:.55}
+.dots i.f{background:currentColor;opacity:1}
+
+/* bottom bar */
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--paper);border-top:1px solid var(--line);padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.bar .grid{max-width:640px;margin:0 auto;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.act{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:56px;border:0;border-radius:14px;font-weight:750;font-size:12.5px}
+.act:active{filter:brightness(.92)}
+.a-food{background:var(--accent);color:var(--on-accent)}
+.a-symptom{background:var(--symp);color:var(--on-symp)}
+.a-bm{background:var(--bm);color:var(--on-bm)}
+.a-drink{background:var(--drink);color:var(--on-drink)}
+.a-sleep{background:var(--sleep);color:var(--on-sleep)}
+.slbtns{display:flex;gap:8px;align-items:center;padding:14px 0 6px}
+.slbtns .act{flex:1;flex-direction:row;gap:8px;font-size:16px}
+.slcard{border:1.5px solid var(--line);border-radius:16px;padding:14px;margin:8px 0 4px;background:var(--box)}
+.slh{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.sll{font-size:12px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--sleep)}
+.sln b{font-size:28px;font-variant-numeric:tabular-nums;font-weight:780}
+.sls{font-size:13px;color:var(--sub);margin-top:4px;overflow-wrap:anywhere}
+.sbar{height:8px;border-radius:4px;background:var(--line);margin-top:8px;overflow:hidden}
+.sbar i{display:block;height:100%;background:var(--sleep);border-radius:4px}
+.pgrid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin-top:8px}
+.pgrid .chip{justify-content:center;min-height:50px;font-size:17px;padding:4px}
+.pword{font-size:14px;margin-top:10px;min-height:20px}
+.pword b{font-variant-numeric:tabular-nums}
+.slpain{display:flex;flex-wrap:wrap;gap:8px;padding:2px 0 4px}
+.slavg{font-size:13px;color:var(--sub);padding:12px 0 2px}
+
+/* chips and fields */
+.chip{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:6px 14px;border:1.5px solid var(--line);background:var(--paper);border-radius:999px;font-weight:650;font-size:14px;color:var(--ink);text-align:left}
+.chip.on{background:var(--a,var(--accent));border-color:var(--a,var(--accent));color:var(--on-a,var(--on-accent))}
+.chip.small{min-height:36px;padding:4px 12px;font-size:13px}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.lab{font-size:12px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--sub);margin:18px 0 8px}
+.hint{font-size:12.5px;color:var(--sub);margin:8px 0 0}
+.fld{width:100%;min-height:46px;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--box);color:var(--ink);font:inherit;font-size:16px}
+textarea.fld{min-height:84px;resize:vertical;line-height:1.4}
+.fld:focus{border-color:var(--a,var(--accent));background:var(--paper);outline:none}
+
+/* sheet */
+.sheet{position:fixed;inset:0;z-index:50;background:var(--paper);display:flex;flex-direction:column;transform:translateY(100%);transition:transform .22s ease;--a:var(--accent);--on-a:var(--on-accent);--a-soft:var(--accent-soft)}
+.sheet.show{transform:none}
+.sheet[data-type="symptom"]{--a:var(--symp);--on-a:var(--on-symp);--a-soft:var(--symp-soft)}
+.sheet[data-type="bm"]{--a:var(--bm);--on-a:var(--on-bm);--a-soft:var(--bm-soft)}
+.sheet[data-type="drink"]{--a:var(--drink);--on-a:var(--on-drink);--a-soft:var(--drink-soft)}
+.sheet[data-type="pain"]{--a:var(--symp);--on-a:var(--on-symp);--a-soft:var(--symp-soft)}
+.sheet[data-type="sleep"]{--a:var(--sleep);--on-a:var(--on-sleep);--a-soft:var(--sleep-soft)}
+.sheet:focus{outline:none}
+.sh-head{display:grid;grid-template-columns:84px minmax(0,1fr) 84px;align-items:center;padding:calc(8px + env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) 8px max(12px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--line)}
+.sh-head h2{margin:0;font-size:16px;font-weight:750;text-align:center}
+.sh-cancel{justify-self:start;border:0;background:transparent;min-height:44px;padding:0 6px;font-weight:650;color:var(--sub);font-size:15px}
+.sh-body{flex:1;overflow-y:auto;overscroll-behavior:contain;padding-block:6px 28px}
+.sh-foot{border-top:1px solid var(--line);padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.sh-foot .grid{max-width:640px;margin:0 auto;display:flex;gap:8px}
+.primary{flex:1;min-height:52px;border:0;border-radius:14px;background:var(--a);color:var(--on-a);font-weight:750;font-size:16px}
+.primary:active{filter:brightness(.92)}
+.ghost{min-height:52px;padding:0 16px;border:1.5px solid var(--line);background:transparent;border-radius:14px;font-weight:700;font-size:14px;color:var(--sub)}
+.ghost.danger{border-color:var(--symp);color:var(--symp)}
+.ghost.armed{background:var(--symp);color:var(--on-symp)}
+
+/* time block */
+.tbox{background:var(--box);border-radius:14px;padding:10px 12px;margin-top:8px}
+.tbig{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.t1{font-size:26px;font-weight:780;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.t2{font-size:13px;color:var(--sub)}
+.mini{font-size:12px;font-weight:800;color:var(--sub);align-self:center;text-transform:uppercase;letter-spacing:.06em;min-width:34px}
+.timein{position:relative}
+.timein input,.dayin input{border:0;background:transparent;font:inherit;font-weight:650;color:inherit;width:auto;min-width:0;padding:0}
+.ctx{margin-top:12px;padding-top:10px;border-top:1px solid var(--line);font-size:13px}
+.ctx b{font-variant-numeric:tabular-nums}
+.ctx span{color:var(--sub)}
+
+.tline{display:flex;align-items:center;gap:10px}
+.tline .t1{font-size:20px;flex:0 1 auto}
+.tline .t2{flex:1;min-width:0;font-size:13px;color:var(--sub)}
+.water{background:var(--box);border-radius:14px;padding:12px 14px;margin-top:12px}
+.wh{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.wl{font-size:12px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--drink)}
+.wn{font-variant-numeric:tabular-nums;color:var(--sub);font-size:14px}
+.wn b{color:var(--ink);font-size:20px}
+.wbar{height:8px;border-radius:4px;background:var(--line);margin-top:8px;overflow:hidden}
+.wbar i{display:block;height:100%;background:var(--drink);border-radius:4px}
+.wf{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;margin-top:10px}
+.ws{font-size:12.5px;color:var(--sub);font-variant-numeric:tabular-nums}
+.wq{display:flex;flex-wrap:wrap;gap:6px}
+.water .chip{border-color:var(--drink);color:var(--drink)}
+/* plate and tiles */
+.plate{list-style:none;margin:0 0 10px;padding:0;border-top:1px solid var(--line)}
+.pl{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.pl .nm{font-weight:650;overflow-wrap:anywhere}
+.pl .dt{font-size:12.5px;color:var(--sub);overflow-wrap:anywhere}
+.step{display:inline-flex;align-items:center;border:1.5px solid var(--line);border-radius:999px;background:var(--paper)}
+.step button{width:42px;height:42px;border:0;background:transparent;font-size:21px;font-weight:700;border-radius:50%}
+.step .q{min-width:58px;text-align:center;font-weight:750;font-variant-numeric:tabular-nums;font-size:14px;padding:0 2px}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 10px}
+.tiles{display:flex;flex-wrap:wrap;gap:8px}
+.tw{display:inline-flex;align-items:stretch;gap:4px;max-width:100%}
+.dd{display:grid;gap:8px}
+.szrow{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.dd select.fld{min-height:48px}
+.minus{min-width:48px;border:1.5px solid var(--line);background:var(--paper);border-radius:12px;font-size:22px;font-weight:700;color:var(--sub)}
+.tile{display:flex;flex-direction:column;align-items:flex-start;text-align:left;min-height:48px;padding:8px 14px;border:1.5px solid var(--line);background:var(--paper);border-radius:12px;max-width:100%}
+.tile .n{font-weight:700;font-size:14.5px;overflow-wrap:anywhere}
+.tile .s{font-size:12px;color:var(--sub);max-width:230px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .c{font-style:normal;font-weight:800;color:var(--a);margin-left:6px;font-variant-numeric:tabular-nums}
+.tile.on{border-color:var(--a);background:var(--a-soft)}
+.tile.ed{border-style:dashed}
+.addrow{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.lform{background:var(--box);border-radius:14px;padding:14px}
+.lform h3{margin:0 0 10px;font-size:15px}
+.lform label{display:block;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--sub);margin:10px 0 6px}
+.lform .btns{display:flex;gap:8px;margin-top:14px}
+.lform .btns .chip{flex:1;justify-content:center}
+
+/* bristol */
+.bl{list-style:none;margin:0;padding:0}
+.bl li{margin:0 0 6px}
+.bb{width:100%;display:grid;grid-template-columns:36px minmax(0,1fr);gap:12px;align-items:center;text-align:left;min-height:50px;padding:7px 12px;border:1.5px solid var(--line);background:var(--paper);border-radius:12px}
+.bb .num{width:32px;height:32px;border-radius:50%;background:var(--box);display:flex;align-items:center;justify-content:center;font-weight:800;font-variant-numeric:tabular-nums}
+.bb .l1{font-weight:700}
+.bb .l2{font-size:12.5px;color:var(--sub)}
+.bb.on{border-color:var(--a);background:var(--a-soft)}
+.bb.on .num{background:var(--a);color:var(--on-a)}
+
+/* settings */
+.srow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 0;margin:0;font-size:15px;font-weight:650;text-transform:none;letter-spacing:0;color:var(--ink)}
+.srow input{width:150px}
+
+/* patterns */
+.pt{padding:14px 0;border-bottom:1px solid var(--line)}
+.pt .h{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.pt .nm{font-weight:700;overflow-wrap:anywhere}
+.pt .ct{font-size:12.5px;color:var(--sub);font-variant-numeric:tabular-nums;white-space:nowrap}
+.pbar{height:7px;border-radius:4px;background:var(--line);margin-top:8px;overflow:hidden}
+.pbar i{display:block;height:100%;background:var(--symp);border-radius:4px}
+.pt .why{font-size:13px;color:var(--sub);margin-top:6px}
+.note{background:var(--box);border-radius:12px;padding:12px 14px;font-size:13.5px;margin-top:12px}
+.calm{color:var(--sub);font-size:13.5px;line-height:1.7;overflow-wrap:anywhere}
+
+.toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:max-content;max-width:88vw;text-align:center;background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:10px;font-size:13.5px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:80}
+.toast.show{opacity:1}
+.toast.act{pointer-events:auto}
+.tundo{margin-left:12px;border:0;background:transparent;color:var(--paper);font-weight:800;text-decoration:underline;min-height:32px;padding:0 4px}
+@media (prefers-reduced-motion: reduce){.sheet,.toast{transition:none}}
+</style>
+
+</head>
+<body>
+<header>
+  <div class="in">
+    <div class="top">
+      <h1>Body Clues</h1>
+      <button class="icon-btn" id="gear" aria-label="Settings">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>
+      </button>
+    </div>
+    <div class="seg" role="group" aria-label="View">
+      <button id="segLog" aria-pressed="true">Day</button>
+      <button id="segSleep" aria-pressed="false">Sleep</button>
+      <button id="segPat" aria-pressed="false">Patterns</button>
+    </div>
+    <div class="daynav" id="daynav">
+      <button class="nav" id="prevDay" aria-label="Previous day">&#8249;</button>
+      <label class="dlabel"><span id="dayText">Today</span><input type="date" id="dayPick" aria-label="Pick a day"></label>
+      <button class="nav" id="nextDay" aria-label="Next day">&#8250;</button>
+    </div>
+  </div>
+</header>
+
+<main class="in" id="main"></main>
+
+<nav class="bar" aria-label="Add an entry">
+  <div class="grid">
+    <button class="act a-food" data-open="food">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3v7M10 3v7M6 10a2 2 0 0 0 4 0M8 12v9M18 3c-2 1.5-3 4-3 7 0 1.5 1 2.5 3 2.5V21"/></svg>
+      Food
+    </button>
+    <button class="act a-drink" data-open="drink">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></svg>
+      Drink
+    </button>
+    <button class="act a-symptom" data-open="symptom">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 12 7 12 10 5 14 19 17 12 21 12"/></svg>
+      Symptom
+    </button>
+    <button class="act a-bm" data-open="bm">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h8v6H6z"/><path d="M4 11h16c0 4-3 7-8 7s-8-3-8-7z"/><path d="M9 18v3h6v-3"/></svg>
+      Bathroom
+    </button>
+  </div>
+</nav>
+
+<div class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="shTitle" tabindex="-1">
+  <div class="sh-head">
+    <span></span>
+    <h2 id="shTitle"></h2>
+    <span></span>
+  </div>
+  <div class="sh-body" id="shBody"></div>
+  <div class="sh-foot"><div class="grid">
+    <button class="ghost" id="shCancel2">Cancel</button>
+    <button class="ghost danger" id="shDelete" hidden>Delete</button>
+    <button class="primary" id="shSave">Save</button>
+  </div></div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------- constants ---------- */
+var LS_KEY = "foodGutLog:v1";
+var SLOTS = ["Breakfast","Lunch","Snack","Dinner"];
+var FULL = [{k:"starving",l:"Starving"},{k:"hungry",l:"Hungry"},{k:"ok",l:"Comfortable"},{k:"full",l:"Already full"}];
+var FEELINGS = ["Calm","Happy","Stressed","Anxious","Sad","Bored","Tired","Rushed","Lonely","Craving","Distracted","With others"];
+var SYMPTOMS = ["Stomach pain","Bloating","Gas","Cramping","Nausea","Heartburn","Constipated feeling","Urgent to go","Headache","Neck pain","Upper back pain","Mid back pain","Low back pain","Fatigue","Brain fog","Itchy or rash","Dizzy"];
+var SEV = ["Mild","Moderate","Strong"];
+var BRISTOL = [
+  {n:1,l:"Hard lumps",d:"Separate hard lumps, hard to pass"},
+  {n:2,l:"Lumpy",d:"Lumpy, sausage-shaped"},
+  {n:3,l:"Cracked",d:"Sausage shape with cracks on top"},
+  {n:4,l:"Smooth",d:"Smooth, soft, snake-like"},
+  {n:5,l:"Soft pieces",d:"Soft blobs with clear edges"},
+  {n:6,l:"Mushy",d:"Fluffy, ragged pieces"},
+  {n:7,l:"Liquid",d:"Watery, no solid pieces"}
+];
+var BM_FLAGS = ["Urgent","Straining","Painful","Incomplete","Blood seen","Undigested food"];
+var DRINKS = ["Water","Coffee","Tea","Juice","Milk","Soda","Sports drink","Broth","Smoothie","Other"];
+var OZ = [4, 8, 12, 16, 20, 32];
+var DAYS = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+var MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+var ICON_DOWN = "";
+
+/* ---------- small helpers ---------- */
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+function pad(n){ return n < 10 ? "0" + n : "" + n; }
+function uid(p){ return p + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+function dayKey(t){ var d = new Date(t); return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+function keyDate(k){ var p = k.split("-"); return new Date(+p[0], +p[1] - 1, +p[2]); }
+function shiftKey(k, n){ var d = keyDate(k); d.setDate(d.getDate() + n); return dayKey(d.getTime()); }
+function addDays(t, n){ var d = new Date(t); d.setDate(d.getDate() + n); return d.getTime(); }
+function fmtTime(t){ var d = new Date(t), h = d.getHours(); return (h % 12 || 12) + ":" + pad(d.getMinutes()) + " " + (h < 12 ? "AM" : "PM"); }
+function shortDate(t){ var d = new Date(t); return MONTHS[d.getMonth()] + " " + d.getDate(); }
+function fmtDay(t){ var d = new Date(t); return DAYS[d.getDay()] + ", " + MONTHS[d.getMonth()] + " " + d.getDate(); }
+function dayLabel(k){
+  var td = dayKey(Date.now());
+  if(k === td) return "Today · " + shortDate(keyDate(k).getTime());
+  if(k === shiftKey(td, -1)) return "Yesterday · " + shortDate(keyDate(k).getTime());
+  return fmtDay(keyDate(k).getTime());
+}
+function whenDay(t){
+  var k = dayKey(t), td = dayKey(Date.now());
+  if(k === td) return "Today · " + shortDate(t);
+  if(k === shiftKey(td, -1)) return "Yesterday · " + shortDate(t);
+  return fmtDay(t);
+}
+function hhmm(t){ var d = new Date(t); return pad(d.getHours()) + ":" + pad(d.getMinutes()); }
+function withTime(t, s){ var d = new Date(t), p = s.split(":"); d.setHours(+p[0], +p[1], 0, 0); return d.getTime(); }
+function withDay(t, k){ var o = new Date(t), d = keyDate(k); d.setHours(o.getHours(), o.getMinutes(), 0, 0); return d.getTime(); }
+function fmtDur(ms){
+  var m = Math.max(0, Math.round(ms / 60000));
+  if(m < 60) return m + "m";
+  var h = Math.floor(m / 60), r = m % 60;
+  if(h < 24) return h + "h" + (r ? " " + r + "m" : "");
+  var d = Math.floor(h / 24);
+  return d + "d" + (h % 24 ? " " + (h % 24) + "h" : "");
+}
+function plural(n, w){ return n + " " + w + (n === 1 ? "" : "s"); }
+function qtyStr(n){ var w = Math.floor(n), f = n - w; if(f >= 0.5) return w ? w + "½" : "½"; return String(w); }
+function unitStr(u, n){ if(!u) return ""; return (n > 1 && u.length > 2 && !/s$/i.test(u)) ? u + "s" : u; }
+function itemText(i){
+  var q = i.qty || 1, u = (i.kind === "food" || i.kind === "part") ? unitStr(i.unit, q) : "";
+  if(i.kind === "order") return (i.detail ? i.detail + ": " : "") + i.name + (q !== 1 ? " ×" + qtyStr(q) : "");
+  if(u) return i.name + " ×" + qtyStr(q) + " " + u;
+  return i.name + (q !== 1 ? " ×" + qtyStr(q) : "");
+}
+function parseSizes(text){
+  return String(text || "").split("\n").map(function(l){ return l.trim(); }).filter(Boolean).map(function(l){
+    var m = l.match(/^(.*?)[\s:=-]*(\d+(?:\.\d+)?)\s*(?:oz|ounces?)?\s*$/i);
+    return m && parseFloat(m[2]) > 0 ? {n: (m[1] || "").trim() || "Size", oz: parseFloat(m[2])} : null;
+  }).filter(Boolean);
+}
+function sizesText(a){ return (a || []).map(function(z){ return z.n + " " + z.oz; }).join("\n"); }
+var DEF_CONT = [{n:"Can",oz:12},{n:"Bottle",oz:20},{n:"Water bottle",oz:16.9},{n:"Glass",oz:8},{n:"Mug",oz:8}];
+function contKey(a){ return (a || []).map(function(c){ return c.n + "|" + c.oz; }).join(";"); }
+var OLD_CONT_KEY = "Can|12;Bottle|20;Glass|8;Mug|8";
+var UNITRE = /^(slices?|pieces?|scoops?|cups?|oz|tbsp|tsp|pumps?|strips?|cloves?)$/i;
+function parseComps(text){
+  return String(text || "").split("\n").map(function(l){ return l.trim(); }).filter(Boolean).map(function(l){
+    var subs = [];
+    var q = 1, n = l.match(/^(\d+\s*\/\s*\d+|\d+(?:\.\d+)?|½|¼|¾)\s*(.*)$/);
+    if(n){
+      var v = n[1];
+      q = v === "½" ? 0.5 : v === "¼" ? 0.25 : v === "¾" ? 0.75 : (v.indexOf("/") > -1 ? (parseFloat(v.split("/")[0]) / parseFloat(v.split("/")[1])) : parseFloat(v));
+      l = n[2].trim() || l;
+    }
+    var unit = "", w = l.split(/\s+/);
+    if(w.length > 1 && UNITRE.test(w[0])){ unit = w[0].toLowerCase().replace(/s$/, ""); l = w.slice(1).join(" "); }
+    return {name: l, qty: q || 1, unit: unit, subs: subs};
+  }).filter(function(c){ return c.name; });
+}
+function compsText(cs){
+  return (cs || []).map(function(c){
+    var pre = (c.qty && c.qty !== 1) || c.unit ? qtyStr(c.qty || 1) + " " + (c.unit ? c.unit + " " : "") : "";
+    return pre + c.name + (c.subs && c.subs.length ? " (" + c.subs.join(", ") + ")" : "");
+  }).join("\n");
+}
+function expandItems(items){
+  var out = [], seen = {};
+  function add(o){
+    var k = (o.name + "|" + (o.unit || "")).toLowerCase();
+    if(seen[k] !== undefined){ out[seen[k]].qty = (out[seen[k]].qty || 1) + (o.qty || 1); return; }
+    seen[k] = out.length; out.push(o);
+  }
+  items.forEach(function(it){
+    if(it.kind === "order" && it.comps && it.comps.length){
+      var m = it.qty || 1, from = (it.detail ? it.detail + ": " : "") + it.name;
+      it.comps.forEach(function(c){
+        if(c.subs && c.subs.length) c.subs.forEach(function(sb){ add({ref: "", kind: "part", name: sb, qty: 1, unit: "", detail: "", from: from, parent: c.name}); });
+        else add({ref: "", kind: "part", name: c.name, qty: (c.qty || 1) * m, unit: c.unit || "", detail: "", from: from});
+      });
+    }else{ out.push(it); seen[(it.name + "|" + (it.unit || "")).toLowerCase()] = out.length - 1; }
+  });
+  return out;
+}
+function foodSummary(e){ return (e.items || []).map(itemText).join(", "); }
+function fullLabel(k){ for(var i = 0; i < FULL.length; i++){ if(FULL[i].k === k) return FULL[i].l; } return ""; }
+
+/* ---------- data ---------- */
+function sbItem(){
+  return {id:"i_starbucks", kind:"order", place:"Starbucks", name:"Turkey bacon, egg and cheese on an English muffin", drink:"Hot chocolate", drinkOz:20, drinkNote:"", drinkSize:"Venti", drinkSizes:[{n:"Short",oz:8},{n:"Tall",oz:12},{n:"Grande",oz:16},{n:"Venti",oz:20},{n:"Venti iced",oz:24}], comps:[{name:"Turkey bacon",qty:2,unit:"",subs:[]},{name:"Egg",qty:1,unit:"",subs:[]},{name:"Cheese",qty:1,unit:"slice",subs:[]},{name:"English muffin",qty:1,unit:"",subs:[]}], uses:0, last:0, drinkComps:[{name:"Hot chocolate",qty:1,unit:"",subs:[]},{name:"Almond milk",qty:1,unit:"",subs:[]},{name:"Peppermint",qty:2,unit:"pump",subs:[]}]};
+}
+function defaultLib(){
+  return {
+    items: [
+      {id:"i_eggs", kind:"food", name:"Scrambled eggs", unit:"scoop", uses:0, last:0},
+      {id:"i_roast", kind:"food", name:"Beef roast", unit:"serving", uses:0, last:0},
+      {id:"i_potato", kind:"food", name:"Baby potatoes", unit:"piece", uses:0, last:0},
+      {id:"i_squash", kind:"food", name:"Butternut squash", unit:"cup", uses:0, last:0},
+      {id:"i_casserole", kind:"meal", name:"Beef casserole", parts:["4 oz meat","3 baby potatoes","½ cup butternut squash"], uses:0, last:0},
+      {id:"i_serpent", kind:"order", name:"Bacon cheeseburger with sweet potato fries", place:"Serpent Salt", uses:0, last:0},
+      sbItem()
+    ],
+    settings: {slotTimes:{Breakfast:"08:00", Lunch:"12:30", Snack:"15:30", Dinner:"18:30"}, windowH:12, waterGoal:64, lastDrink:null, seedSb:true, containers: DEF_CONT, sleepGoal:8, lastBed:"", lastWake:"", painMin:5},
+    touched: false
+  };
+}
+function plain(v){ return v == null ? v : JSON.parse(JSON.stringify(v)); }
+function mergeLib(l){
+  var d = defaultLib(), s = plain((l && l.settings) || {}) || {};
+  var items = (l && Array.isArray(l.items)) ? plain(l.items) : d.items;
+  items.forEach(function(i){ if(i.id === "i_starbucks" && (i.drinkNote === "Venti" || i.drinkNote === "Venti, no whip, no foam" || i.drinkNote === "Venti, almond milk, 2 pumps peppermint, no whip, no foam")) i.drinkNote = "";
+    if(i.kind === "order" && i.drinkOz && !(i.drinkSizes && i.drinkSizes.length)){
+      if(i.id === "i_starbucks"){ i.drinkSizes = sbItem().drinkSizes; i.drinkSize = "Venti"; i.drinkOz = 20; }
+      else { i.drinkSizes = [{n: i.drinkSize || "Usual", oz: i.drinkOz}]; i.drinkSize = i.drinkSizes[0].n; }
+    }
+    if(i.id === "i_starbucks"){ if(!i.comps) i.comps = sbItem().comps; if(!i.drinkComps){ i.drinkComps = sbItem().drinkComps; } } });
+  if(!s.seedSb && !items.some(function(i){ return i.id === "i_starbucks"; })) items.push(sbItem());
+  return {
+    items: items,
+    settings: {slotTimes: Object.assign({}, d.settings.slotTimes, s.slotTimes || {}), windowH: s.windowH || 12, waterGoal: s.waterGoal || 64, lastDrink: s.lastDrink || null, seedSb: true, containers: (Array.isArray(s.containers) && s.containers.length && contKey(s.containers) !== OLD_CONT_KEY) ? s.containers : DEF_CONT, sleepGoal: s.sleepGoal || 8, lastBed: s.lastBed || "", lastWake: s.lastWake || "", painMin: (s.painMin >= 0 && s.painMin <= 10) ? s.painMin : 5},
+    touched: !!(l && l.touched)
+  };
+}
+var state = {entries: [], lib: defaultLib(), view: "log", day: dayKey(Date.now()), status: "local"};
+
+function saveLocal(){ try{ localStorage.setItem(LS_KEY, JSON.stringify({entries: state.entries, lib: state.lib})); }catch(e){} }
+function loadLocal(){
+  try{
+    var r = localStorage.getItem(LS_KEY);
+    if(!r) return;
+    var p = JSON.parse(r);
+    if(p && Array.isArray(p.entries)) state.entries = p.entries;
+    if(p && p.lib) state.lib = mergeLib(p.lib);
+  }catch(e){}
+}
+
+/* ---------- cloud (db capability, private per person) ---------- */
+var coll = null, migrated = false, cloudQ = Promise.resolve(), libTimer = null;
+function enqueue(fn){ cloudQ = cloudQ.then(fn).catch(function(){ setStatus("error"); }); return cloudQ; }
+function putEntry(e){ if(coll) enqueue(function(){ return coll.doc(e.id).set(e); }); }
+function delEntry(id){ if(coll) enqueue(function(){ return coll.doc(id).delete(); }); }
+function putLib(){
+  if(!coll) return;
+  clearTimeout(libTimer);
+  libTimer = setTimeout(function(){
+    enqueue(function(){ return coll.doc("library").set({items: state.lib.items, settings: state.lib.settings}); });
+  }, 500);
+}
+function touchLib(){ state.lib.touched = true; saveLocal(); putLib(); }
+function statusText(){
+  if(state.status === "cloud") return "Saved to your Claude account, so your other devices see it too.";
+  if(state.status === "syncing") return "Syncing to your Claude account…";
+  if(state.status === "error") return "Couldn't reach online storage just now. Entries are kept on this device.";
+  return "Saved on this device only.";
+}
+function setStatus(s){
+  state.status = s;
+  var a = $("status"), b = $("stText");
+  if(a) a.textContent = statusText();
+  if(b) b.textContent = statusText();
+}
+function hasLocalData(){ return state.entries.length > 0 || state.lib.touched; }
+async function connect(){
+  try{
+    if(!window.claude || !window.claude.use) return;
+    var res = await Promise.all([window.claude.use("user"), window.claude.use("db")]);
+    var user = res[0], db = res[1];
+    if(!user || !db) return;
+    var id = await user.id();
+    if(!id) return;
+    var c = db.collection("data/users/" + id);
+    var timer = setTimeout(function(){ setStatus("error"); }, 10000);
+    coll = c;
+    setStatus("syncing");
+    c.onSnapshot(function(snap){
+      clearTimeout(timer);
+      var es = [], lib = null;
+      snap.docs.forEach(function(d){
+        var data = d.data();
+        if(!data) return;
+        if(d.id === "library") lib = plain(data);
+        else if(d.id.indexOf("e_") === 0) es.push(Object.assign(plain(data), {id: d.id}));
+      });
+      var definitive = !snap.metadata.fromCache;
+      if(definitive && !es.length && !lib && !migrated && hasLocalData()){
+        migrated = true;
+        var mine = state.entries.slice();
+        enqueue(async function(){
+          for(var i = 0; i < mine.length; i++){ await c.doc(mine[i].id).set(mine[i]); }
+          if(state.lib.touched) await c.doc("library").set({items: state.lib.items, settings: state.lib.settings});
+        });
+        setStatus("cloud");
+        return;
+      }
+      if(es.length || lib || !state.entries.length){
+        state.entries = es;
+        if(lib) state.lib = mergeLib(lib);
+        saveLocal();
+        render();
+      }
+      setStatus(definitive ? "cloud" : "syncing");
+    }, function(){ clearTimeout(timer); coll = null; setStatus("error"); });
+  }catch(e){ coll = null; setStatus("local"); }
+}
+
+/* ---------- entry logic ---------- */
+function isReaction(e){
+  if(e.type === "symptom") return true;
+  if(e.type === "pain") return (e.level || 0) >= (state.lib.settings.painMin || 5);
+  if(e.type !== "bm") return false;
+  var f = e.flags || [], b = e.bristol || 0;
+  return (b && (b <= 2 || b >= 6)) || f.indexOf("Urgent") > -1 || f.indexOf("Painful") > -1 || f.indexOf("Blood seen") > -1;
+}
+function reactNames(r){
+  if(r.type === "pain") return ["Pain " + r.level + "/10"];
+  if(r.type === "symptom") return (r.symptoms || []).map(function(s){ return s.k; });
+  return [r.bristol ? "Bathroom, type " + r.bristol : "Bathroom"];
+}
+function lastFoodBefore(t, skipId){
+  var best = null;
+  state.entries.forEach(function(f){ if(f.type === "food" && f.id !== skipId && f.t < t && (!best || f.t > best.t)) best = f; });
+  return best;
+}
+function dayEntries(k){ return state.entries.filter(function(e){ return dayKey(e.t) === k; }).sort(function(a, b){ return a.t - b.t; }); }
+function winMs(){ return state.lib.settings.windowH * 3600000; }
+function findItem(id){ for(var i = 0; i < state.lib.items.length; i++){ if(state.lib.items[i].id === id) return state.lib.items[i]; } return null; }
+function saveEntry(e){
+  var i = -1;
+  state.entries.forEach(function(x, n){ if(x.id === e.id) i = n; });
+  if(i >= 0) state.entries[i] = e; else state.entries.push(e);
+  saveLocal(); putEntry(e);
+}
+function removeEntry(id){
+  state.entries = state.entries.filter(function(x){ return x.id !== id; });
+  saveLocal(); delEntry(id);
+}
+
+/* ---------- toast ---------- */
+var toastTimer = null;
+function toast(msg, undo){
+  var t = $("toast");
+  t.textContent = "";
+  var sp = document.createElement("span"); sp.textContent = msg; t.appendChild(sp);
+  if(undo){
+    var b = document.createElement("button"); b.className = "tundo"; b.textContent = "Undo";
+    b.addEventListener("click", function(){ clearTimeout(toastTimer); t.classList.remove("show", "act"); undo(); });
+    t.appendChild(b); t.classList.add("act");
+  }else{ t.classList.remove("act"); }
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.classList.remove("show", "act"); }, undo ? 5000 : 2400);
+}
+
+/* ---------- render: log ---------- */
+function dotsHTML(n){ var h = '<span class="dots" aria-hidden="true">'; for(var i = 1; i <= 3; i++) h += '<i' + (i <= n ? ' class="f"' : '') + '></i>'; return h + '</span>'; }
+function sinceHTML(e){
+  var f = lastFoodBefore(e.t, e.id);
+  if(!f || e.t - f.t > 36 * 3600000) return "";
+  var lab = f.slot || "meal";
+  return '<div class="since"><b>' + esc(fmtDur(e.t - f.t)) + '</b> after ' + esc(lab.toLowerCase()) + ' <span>' + esc(foodSummary(f)) + '</span></div>';
+}
+function followHTML(f){
+  var W = winMs(), rs = state.entries.filter(function(r){ return isReaction(r) && r.t > f.t && r.t - f.t <= W; }).sort(function(a, b){ return a.t - b.t; });
+  if(!rs.length) return "";
+  var h = "";
+  rs.slice(0, 3).forEach(function(r){
+    var nm = r.type === "symptom" ? reactNames(r).slice(0, 2).join(", ") : reactNames(r)[0];
+    h += '<span class="pill ' + (r.type === "bm" ? "p-bm" : "p-symp") + '">' + esc(nm) + ' · ' + esc(fmtDur(r.t - f.t)) + '</span>';
+  });
+  if(rs.length > 3) h += '<span class="pill p-symp">+' + (rs.length - 3) + ' more</span>';
+  return h;
+}
+function evHTML(e){
+  var c = new Date(e.t), h = c.getHours();
+  var tm = '<div class="tm">' + (h % 12 || 12) + ':' + pad(c.getMinutes()) + '<span>' + (h < 12 ? "AM" : "PM") + '</span></div>';
+  var body = "";
+  if(e.type === "food"){
+    var det = [];
+    if(e.fullness) det.push(e.fullness === "full" ? "<b>" + esc(fullLabel(e.fullness)) + "</b>" : esc(fullLabel(e.fullness)));
+    if(e.feelings && e.feelings.length) det.push(esc(e.feelings.join(", ")));
+    body = '<div class="kind k-food">Food' + (e.slot ? " · " + esc(e.slot) : "") + '</div><div class="ttl">' + esc(foodSummary(e)) + '</div>' +
+      (det.length ? '<div class="det">' + det.join(" · ") + '</div>' : '') +
+      (e.note ? '<div class="det">' + esc(e.note) + '</div>' : '') + followHTML(e);
+  }else if(e.type === "drink"){
+    body = '<div class="kind k-drink">Drink</div><div class="ttl">' + esc(e.drink) + (e.size ? ' \u00b7 ' + esc(e.size) : '') + ' \u00b7 ' + fmtOz(e.oz) + ' oz</div>' + ((e.parts && e.parts.length) ? '<div class="det">' + esc(e.parts.map(function(c){ return itemText({kind: "part", name: c.name, qty: c.qty, unit: c.unit}); }).join(", ")) + '</div>' : '') + (e.note ? '<div class="det">' + esc(e.note) + '</div>' : '');
+  }else if(e.type === "pain"){
+    body = '<div class="kind k-pain">Pain' + (PCHECK[e.check || ""] && e.check ? ' \u00b7 ' + PCHECK[e.check] : '') + '</div><div class="ttl">' + e.level + ' of 10 \u00b7 ' + painWord(e.level) + '</div>' +
+      ((e.where && e.where.length) ? '<div class="det">' + esc(e.where.join(", ")) + '</div>' : '') + (e.note ? '<div class="det">' + esc(e.note) + '</div>' : '') + sinceHTML(e);
+  }else if(e.type === "sleep"){
+    body = '<div class="kind k-sleep">' + (e.nap ? "Nap" : "Sleep") + ' \u00b7 woke up</div><div class="ttl">' + (e.nap ? "Napped " : "Slept ") + esc(fmtDur(slDur(e))) + '</div><div class="det">' + esc(sleepDetail(e)) + '</div>' + (e.note ? '<div class="det">' + esc(e.note) + '</div>' : '');
+  }else if(e.type === "symptom"){
+    body = '<div class="kind k-symptom">Symptom</div><div class="ttl">' +
+      (e.symptoms || []).map(function(s){ return '<span aria-label="' + esc(s.k + ", " + SEV[s.sev - 1].toLowerCase()) + '">' + esc(s.k) + dotsHTML(s.sev) + '</span>'; }).join(' &nbsp;') +
+      '</div>' + (e.note ? '<div class="det">' + esc(e.note) + '</div>' : '') + sinceHTML(e);
+  }else{
+    var title = e.bristol ? "Type " + e.bristol + " · " + BRISTOL[e.bristol - 1].l : "Bowel movement";
+    body = '<div class="kind k-bm">Bathroom</div><div class="ttl">' + esc(title) + '</div>' +
+      ((e.flags && e.flags.length) ? '<div class="det">' + esc(e.flags.join(", ")) + '</div>' : '') +
+      (e.note ? '<div class="det">' + esc(e.note) + '</div>' : '') + sinceHTML(e);
+  }
+  return '<li class="ev" role="button" tabindex="0" data-id="' + esc(e.id) + '">' + tm + '<div>' + body + '</div></li>';
+}
+function fmtOz(n){ return String(Math.round(n * 10) / 10); }
+function drinkTotals(k){
+  var tot = 0, w = 0;
+  dayEntries(k).forEach(function(e){ if(e.type === "drink"){ tot += (+e.oz || 0); if(e.drink === "Water") w += (+e.oz || 0); } });
+  return {tot: tot, w: w};
+}
+function bottleBtn(){
+  var c = (state.lib.settings.containers || []).filter(function(x){ return /water bottle/i.test(x.n); })[0];
+  return c ? '<button class="chip small" data-quick="' + c.oz + '" data-size="' + esc(c.n) + '">+ ' + esc(c.n.toLowerCase()) + ' ' + fmtOz(c.oz) + '</button>' : '';
+}
+function waterHTML(){
+  var dt = drinkTotals(state.day), goal = state.lib.settings.waterGoal || 64, pct = Math.min(100, Math.round(dt.tot / goal * 100));
+  return '<section class="water" aria-label="Drinks for the day"><div class="wh"><span class="wl">Drinks</span><span class="wn"><b>' + fmtOz(dt.tot) + '</b> of ' + goal + ' oz' + (dt.tot >= goal ? ' \u00b7 goal reached' : '') + '</span></div>' +
+    '<div class="wbar" role="img" aria-label="' + pct + ' percent of the daily goal"><i style="width:' + pct + '%"></i></div>' +
+    '<div class="wf"><span class="ws">Water ' + fmtOz(dt.w) + ' oz \u00b7 Other ' + fmtOz(dt.tot - dt.w) + ' oz</span>' +
+    '<span class="wq"><button class="chip small" data-quick="8">+ 8 oz water</button><button class="chip small" data-quick="16">+ 16 oz</button>' + bottleBtn() + '</span></div></section>';
+}
+/* ---------- sleep ---------- */
+var SQ = ["", "Poor", "Fair", "Good", "Great"];
+var SWAKES = [{v: 0, l: "None"}, {v: 1, l: "Once"}, {v: 2, l: "2 to 3 times"}, {v: 3, l: "4 or more"}];
+var SFEEL = ["Rested", "Okay", "Groggy", "Foggy", "Achy", "Headache"];
+var SFLAGS = ["Needed bathroom", "Stomach pain", "Heartburn", "Pain", "Too hot", "Noise", "Racing thoughts", "Late screen"];
+function slDur(e){ return Math.max(0, e.t - (e.start || e.t)); }
+function wakesLabel(n){ for(var i = 0; i < SWAKES.length; i++){ if(SWAKES[i].v === n) return n === 0 ? "No waking" : "Woke " + SWAKES[i].l.toLowerCase(); } return ""; }
+function sleepDetail(e){
+  var p = ["bed " + fmtTime(e.start || e.t) + " to up " + fmtTime(e.t)];
+  if(e.quality) p.push(SQ[e.quality]);
+  if(e.wakes != null) p.push(wakesLabel(e.wakes));
+  if(e.feel) p.push(e.feel);
+  if(e.flags && e.flags.length) p.push(e.flags.join(", "));
+  return p.join(" \u00b7 ");
+}
+function nightExtra(e){
+  if(e.nap || !e.start) return "";
+  var p = [], f = lastFoodBefore(e.start, null), pl = painLine(e);
+  if(pl) p.push(pl);
+  if(f && e.start - f.t <= 24 * 3600000) p.push("Last food " + fmtDur(e.start - f.t) + " before bed");
+  var n = state.entries.filter(function(x){ return x.t >= e.start && x.t <= e.t && isReaction(x); }).length;
+  if(n) p.push(n === 1 ? "1 symptom entry overnight" : n + " symptom entries overnight");
+  return p.join(" \u00b7 ");
+}
+var PWHERE = ["Head", "Neck", "Shoulders", "Upper back", "Mid back", "Low back", "Stomach", "Hips", "Joints", "Legs", "Feet", "Hands", "All over"];
+var PCHECK = {bed: "Bedtime", wake: "Morning", "": "Other time"};
+function painWord(n){ return n === 0 ? "None" : (n <= 3 ? "Mild" : (n <= 6 ? "Moderate" : "Strong")); }
+function painNear(a, b, first){
+  var l = state.entries.filter(function(e){ return e.type === "pain" && e.t >= a && e.t <= b; }).sort(function(x, y){ return x.t - y.t; });
+  return l.length ? (first ? l[0] : l[l.length - 1]) : null;
+}
+function nightPain(e){ return {bed: painNear(e.start - 4 * 3600000, e.start + 1800000, false), wake: painNear(e.t - 1800000, e.t + 4 * 3600000, true)}; }
+function isRough(e){ return !!((e.quality && e.quality <= 2) || (e.wakes != null && e.wakes >= 2)); }
+function painLine(e){
+  var np = nightPain(e), p = [];
+  if(np.bed) p.push("Pain " + np.bed.level + " at bed");
+  if(np.wake) p.push((np.bed ? "" : "Pain ") + np.wake.level + " on waking");
+  return p.join(", ");
+}
+function renderSleep(){
+  var all = state.entries.filter(function(e){ return e.type === "sleep"; }).sort(function(a, b){ return b.t - a.t; });
+  var goal = state.lib.settings.sleepGoal || 8, goalMs = goal * 3600000;
+  var h = '<div class="slbtns"><button class="act a-sleep" data-open="sleep"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></svg>Log sleep</button><button class="chip" data-open="sleep" data-nap="1">+ Nap</button></div>' +
+    '<div class="slpain"><button class="chip small" data-open="pain" data-check="bed">Bedtime pain</button><button class="chip small" data-open="pain" data-check="wake">Morning pain</button></div>';
+  var lastPain = state.entries.filter(function(e){ return e.type === "pain"; }).sort(function(a, b){ return b.t - a.t; })[0];
+  if(lastPain) h += '<div class="slavg" style="padding-top:2px">Last pain check: <b>' + lastPain.level + ' of 10</b> \u00b7 ' + esc(fmtDay(lastPain.t)) + ' ' + esc(fmtTime(lastPain.t)) + '</div>';
+  var nights = all.filter(function(e){ return !e.nap; });
+  if(!all.length){
+    return h + '<div class="empty"><b>No sleep logged yet</b>Tap Log sleep when you wake up. You can also fill in a night you missed.</div><p class="status" id="status">' + esc(statusText()) + '</p>';
+  }
+  if(nights.length){
+    var last = nights[0], d = slDur(last), pct = Math.min(100, Math.round(d / (goalMs * 1.25) * 100));
+    h += '<section class="slcard" aria-label="Last sleep"><div class="slh"><span class="sll">Last sleep</span><span class="sln"><b>' + esc(fmtDur(d)) + '</b></span></div>' +
+      '<div class="sls">' + esc(fmtDay(last.t)) + ' \u00b7 ' + esc(sleepDetail(last)) + '</div>' +
+      '<div class="sbar" role="img" aria-label="' + pct + ' percent of a ' + goal + ' hour goal"><i style="width:' + pct + '%"></i></div>' +
+      (nightExtra(last) ? '<div class="sls" style="margin-top:8px">' + esc(nightExtra(last)) + '</div>' : '') + '</section>';
+    var wk = nights.filter(function(e){ return e.t >= Date.now() - 7 * 86400000; });
+    if(wk.length){
+      var avg = wk.reduce(function(a, e){ return a + slDur(e); }, 0) / wk.length;
+      h += '<div class="slavg">Past 7 days: <b>' + esc(fmtDur(avg)) + '</b> average over ' + plural(wk.length, "night") + ' \u00b7 goal ' + goal + 'h</div>';
+    }
+  }
+  h += '<div class="lab">Recent</div><ol class="tl">' + all.slice(0, 21).map(function(e){
+    var d2 = slDur(e), c = new Date(e.t), pc = Math.min(100, Math.round(d2 / (goalMs * 1.25) * 100)), x = nightExtra(e);
+    return '<li class="ev sn" role="button" tabindex="0" data-id="' + esc(e.id) + '"><div class="tm">' + DAYS[c.getDay()] + '<span>' + MONTHS[c.getMonth()] + ' ' + c.getDate() + '</span></div><div>' +
+      '<div class="kind k-sleep">' + (e.nap ? "Nap" : "Sleep") + '</div><div class="ttl">' + esc(fmtDur(d2)) + '</div>' +
+      '<div class="sbar"><i style="width:' + pc + '%"></i></div><div class="det">' + esc(sleepDetail(e)) + '</div>' + (x ? '<div class="det">' + esc(x) + '</div>' : '') + '</div></li>';
+  }).join("") + '</ol><p class="status" id="status">' + esc(statusText()) + '</p>';
+  return h;
+}
+function todLabel(s){ var p = s.split(":"), h = +p[0], m = +p[1]; return (h % 12 || 12) + (m ? ":" + pad(m) : "") + " " + (h < 12 ? "AM" : "PM"); }
+function slCalc(){
+  var b = withTime(S.t, S.bedTod);
+  if(b >= S.t) b = addDays(b, -1);
+  S.bed = b;
+}
+function painFormHTML(){
+  var h = '<div class="lab">Which check?</div><div class="row">' + ["bed", "wake", ""].map(function(k){ return '<button class="chip' + (S.check === k ? ' on' : '') + '" data-act="pcheck" data-v="' + k + '" aria-pressed="' + (S.check === k) + '">' + PCHECK[k] + '</button>'; }).join("") + '</div>';
+  h += '<div class="lab">Pain level</div><div class="pgrid">' + [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(function(n){ return '<button class="chip' + (S.level === n ? ' on' : '') + '" data-act="plevel" data-v="' + n + '" aria-pressed="' + (S.level === n) + '">' + n + '</button>'; }).join("") + '</div>';
+  h += '<div class="pword">' + (S.level == null ? '<span style="color:var(--sub)">Tap a number. 0 is no pain, 10 is the worst.</span>' : '<b>' + S.level + ' of 10</b> \u00b7 ' + painWord(S.level)) + '</div>';
+  h += '<div class="lab">Where? (optional)</div><div class="row">' + PWHERE.map(function(k){ var o = S.where.indexOf(k) > -1; return '<button class="chip' + (o ? ' on' : '') + '" data-act="pwhere" data-v="' + k + '" aria-pressed="' + o + '">' + k + '</button>'; }).join("") + '</div>';
+  return h;
+}
+function sleepFormHTML(){
+  var td = dayKey(Date.now()), yd = shiftKey(td, -1), wk = dayKey(S.t), dur = S.t - S.bed, goal = state.lib.settings.sleepGoal || 8;
+  function on(c){ return c ? " on" : ""; }
+  var h = '<div class="lab">Woke up on</div><div class="row">' +
+    '<button class="chip small' + on(wk === td) + '" data-act="slday" data-v="today" aria-pressed="' + (wk === td) + '">Today</button>' +
+    '<button class="chip small' + on(wk === yd) + '" data-act="slday" data-v="yest" aria-pressed="' + (wk === yd) + '">Yesterday</button>' +
+    '<label class="chip small timein">Other day <input type="date" id="slDay" max="' + td + '" value="' + wk + '"></label></div>';
+  h += '<div class="tbox"><div class="tline"><span class="mini">Woke</span><span class="t1">' + esc(fmtTime(S.t)) + '</span></div><div class="row">' +
+    '<button class="chip small" data-act="slnow">Now</button>' +
+    ["05:00", "06:00", "07:00", "08:00", "09:00", "10:00"].map(function(v){ return '<button class="chip small' + on(hhmm(S.t) === v) + '" data-act="slwake" data-v="' + v + '">' + todLabel(v) + '</button>'; }).join("") +
+    '<label class="chip small timein">Exact <input type="time" id="slWakeIn" value="' + hhmm(S.t) + '"></label></div></div>';
+  h += '<div class="tbox"><div class="tline"><span class="mini">' + (S.nap ? "Slept" : "Bed") + '</span><span class="t1">' + esc(fmtTime(S.bed)) + '</span><span class="t2">' + (dayKey(S.bed) === dayKey(S.t) ? "" : esc(fmtDay(S.bed))) + '</span></div><div class="row">';
+  if(S.nap){
+    h += '<span class="mini">For</span>' + [[20, "20m"], [30, "30m"], [45, "45m"], [60, "1h"], [90, "1h 30m"], [120, "2h"]].map(function(z){ return '<button class="chip small' + on(Math.round(dur / 60000) === z[0]) + '" data-act="slnap" data-v="' + z[0] + '">' + z[1] + '</button>'; }).join("");
+  }else{
+    h += ["21:00", "22:00", "23:00", "00:00", "01:00", "02:00"].map(function(v){ return '<button class="chip small' + on(S.bedTod === v) + '" data-act="slbed" data-v="' + v + '">' + todLabel(v) + '</button>'; }).join("");
+  }
+  h += '<label class="chip small timein">Exact <input type="time" id="slBedIn" value="' + S.bedTod + '"></label></div>';
+  h += '<div class="ctx" style="margin-top:10px"><b>' + (S.nap ? "Napped " : "Slept ") + esc(fmtDur(dur)) + '</b>' + (S.nap ? '' : ' <span>goal ' + goal + 'h' + (dur > 16 * 3600000 ? ' \u00b7 check AM and PM' : '') + '</span>') + '</div>';
+  if(!S.nap){
+    var f = lastFoodBefore(S.bed, null);
+    if(f && S.bed - f.t <= 24 * 3600000) h += '<div class="ctx"><b>' + esc(fmtDur(S.bed - f.t)) + '</b> from your last food to bed <span>' + esc(foodSummary(f)) + '</span></div>';
+  }
+  h += '</div>';
+  h += '<div class="lab">How was the sleep?</div><div class="row">' + [1, 2, 3, 4].map(function(v){ return '<button class="chip' + on(S.quality === v) + '" data-act="slq" data-v="' + v + '" aria-pressed="' + (S.quality === v) + '">' + SQ[v] + '</button>'; }).join("") + '</div>';
+  if(!S.nap) h += '<div class="lab">Awake during the night</div><div class="row">' + SWAKES.map(function(w){ return '<button class="chip' + on(S.wakes === w.v) + '" data-act="slwk" data-v="' + w.v + '" aria-pressed="' + (S.wakes === w.v) + '">' + w.l + '</button>'; }).join("") + '</div>';
+  h += '<div class="lab">How did you feel on waking?</div><div class="row">' + SFEEL.map(function(k){ return '<button class="chip' + on(S.feel === k) + '" data-act="slfeel" data-v="' + k + '" aria-pressed="' + (S.feel === k) + '">' + k + '</button>'; }).join("") + '</div>';
+  if(!S.nap) h += '<div class="lab">What got in the way?</div><div class="row">' + SFLAGS.map(function(k){ var o = S.flags.indexOf(k) > -1; return '<button class="chip' + on(o) + '" data-act="slflag" data-v="' + k + '" aria-pressed="' + o + '">' + k + '</button>'; }).join("") + '</div>';
+  return h;
+}
+function renderLog(){
+  var list = dayEntries(state.day), m = 0, s = 0, b = 0, dr = 0, sl = 0, pn = 0;
+  list.forEach(function(e){ if(e.type === "pain") pn++; else if(e.type === "food") m++; else if(e.type === "drink") dr++; else if(e.type === "symptom") s++; else if(e.type === "sleep") sl += slDur(e); else b++; });
+  var h = waterHTML();
+  if(list.length){
+    h += '<div class="daysum">' + plural(m, "meal") + ' \u00b7 ' + plural(dr, "drink") + ' \u00b7 ' + plural(s, "symptom entry").replace("entrys", "entries") + ' · ' + plural(b, "bathroom trip") + (pn ? ' \u00b7 ' + plural(pn, "pain check") : '') + (sl ? ' \u00b7 slept ' + fmtDur(sl) : '') + '</div>';
+    h += '<ol class="tl">' + list.map(evHTML).join("") + '</ol>';
+  }else{
+    h += '<div class="empty"><b>Nothing logged yet</b>Tap Food, Drink, Symptom or Bathroom below.<br>Each one starts at the current time.</div>';
+  }
+  h += '<p class="status" id="status">' + esc(statusText()) + '</p>';
+  return h;
+}
+
+/* ---------- render: patterns ---------- */
+function renderPatterns(){ return renderReactionPatterns() + renderSleepPatterns(); }
+function avgOf(list, fn){
+  var v = list.map(fn).filter(function(x){ return x != null && !isNaN(x); });
+  return v.length ? v.reduce(function(a, b){ return a + b; }, 0) / v.length : null;
+}
+function nightGroup(label, list){
+  if(!list.length) return "";
+  var hrs = avgOf(list, function(i){ return slDur(i.e); }), q = avgOf(list, function(i){ return i.e.quality || null; });
+  var wn = list.filter(function(i){ return i.e.wakes != null; }), wk = wn.filter(function(i){ return i.e.wakes > 0; }).length;
+  var wp = avgOf(list, function(i){ return i.pn.wake ? i.pn.wake.level : null; });
+  return '<div class="pt"><div class="h"><span class="nm">' + esc(label) + '</span><span class="ct">' + plural(list.length, "night") + (list.length < 3 ? ' \u00b7 few' : '') + '</span></div><div class="why">average ' + esc(fmtDur(hrs)) +
+    (q != null ? ' \u00b7 quality ' + (Math.round(q * 10) / 10) + ' of 4' : '') + (wn.length ? ' \u00b7 woke at least once on ' + wk + ' of ' + wn.length : '') + (wp != null ? ' \u00b7 pain on waking ' + (Math.round(wp * 10) / 10) + ' of 10' : '') + '</div></div>';
+}
+function renderSleepPatterns(){
+  var nights = state.entries.filter(function(e){ return e.type === "sleep" && !e.nap && e.start; }).sort(function(a, b){ return a.t - b.t; });
+  var h = '<div class="lab" style="margin-top:28px">Sleep and pain</div>';
+  if(nights.length < 3) return h + '<p class="calm">These show up once about three nights of sleep are logged. So far: ' + nights.length + '.</p>';
+  var info = nights.map(function(e){
+    var f = lastFoodBefore(e.start, null), gap = f ? e.start - f.t : null;
+    return {e: e, gap: gap, late: gap != null && gap <= 3 * 3600000, react: state.entries.filter(function(x){ return x.t >= e.start && x.t <= e.t && isReaction(x); }).length, rough: isRough(e), pn: nightPain(e)};
+  });
+  h += '<div class="note">A rough night is one rated Poor or Fair, or one where you woke 2 or more times. Each group below needs a few nights before the averages mean much.</div>';
+  var late = info.filter(function(i){ return i.late; }), early = info.filter(function(i){ return !i.late; });
+  if(late.length && early.length){
+    h += '<div class="lab">Eating close to bedtime</div>' + nightGroup("Last food within 3 hours of bed", late) + nightGroup("Last food earlier, or none logged", early);
+  }
+  var wr = info.filter(function(i){ return i.react > 0; }), nr = info.filter(function(i){ return i.react === 0; });
+  if(wr.length && nr.length){
+    h += '<div class="lab">Symptoms overnight</div>' + nightGroup("Symptoms logged overnight", wr) + nightGroup("No symptoms overnight", nr);
+  }
+  var roughN = info.filter(function(i){ return i.rough; });
+  h += '<div class="lab">Eaten within 4 hours of bed</div>';
+  if(!roughN.length){
+    h += '<p class="calm">No rough nights logged yet.</p>';
+  }else{
+    var st = {};
+    info.forEach(function(i){
+      var seen = {};
+      state.entries.forEach(function(f){
+        if(!((f.type === "food") || (f.type === "drink" && f.drink !== "Water")) || f.t > i.e.start || i.e.start - f.t > 4 * 3600000) return;
+        (f.type === "food" ? (f.items || []) : ((f.parts && f.parts.length) ? f.parts : [{name: f.drink}])).forEach(function(it){
+          var k = it.name.toLowerCase();
+          if(seen[k]) return; seen[k] = 1;
+          var o = st[k] || (st[k] = {name: it.name, n: 0, hit: 0});
+          o.n++; if(i.rough) o.hit++;
+        });
+      });
+    });
+    var rows = Object.keys(st).map(function(k){ return st[k]; }).filter(function(o){ return o.hit > 0; }).sort(function(a, b){ return (b.hit / b.n) - (a.hit / a.n) || b.n - a.n; });
+    if(!rows.length) h += '<p class="calm">Nothing logged in the 4 hours before bed on a rough night.</p>';
+    rows.slice(0, 15).forEach(function(o){
+      h += '<div class="pt"><div class="h"><span class="nm">' + esc(o.name) + '</span><span class="ct">' + o.hit + ' of ' + plural(o.n, "night") + '</span></div><div class="pbar"><i style="width:' + Math.round(o.hit / o.n * 100) + '%"></i></div>' + (o.n < 3 ? '<div class="why">only ' + plural(o.n, "night") + ' logged</div>' : '') + '</div>';
+    });
+  }
+  var both = info.filter(function(i){ return i.pn.bed && i.pn.wake; });
+  if(both.length){
+    var ch = avgOf(both, function(i){ return i.pn.wake.level - i.pn.bed.level; }), c1 = Math.round(Math.abs(ch) * 10) / 10;
+    h += '<div class="lab">Pain overnight</div><div class="note">Across ' + plural(both.length, "night") + ' with both checks, pain on waking was ' + (c1 === 0 ? 'about the same as at bedtime.' : '<b>' + c1 + ' points ' + (ch < 0 ? 'lower' : 'higher') + '</b> than at bedtime on average.') + '</div>';
+  }
+  var rw = info.filter(function(i){ return i.rough && i.pn.wake; }), gw = info.filter(function(i){ return !i.rough && i.pn.wake; });
+  if(rw.length && gw.length){
+    h += '<div class="lab">Pain on waking</div>' + nightGroup("After a rough night", rw) + nightGroup("After a better night", gw);
+  }
+  return h;
+}
+function renderReactionPatterns(){
+  var W = winMs(), hrs = state.lib.settings.windowH;
+  var foods = state.entries.filter(function(e){ return e.type === "food" || (e.type === "drink" && e.drink !== "Water"); });
+  var react = state.entries.filter(isReaction);
+  if(!foods.length || !react.length){
+    return '<div class="empty"><b>Patterns show up here</b>Once you have logged some meals and some reactions, this page lists which foods and drinks came before them.</div>';
+  }
+  var stats = {}, fullHit = 0, fullN = 0, othHit = 0, othN = 0;
+  foods.forEach(function(f){
+    var rs = react.filter(function(r){ return r.t > f.t && r.t - f.t <= W; });
+    var hit = rs.length > 0;
+    if(f.type !== "food"){ /* drinks carry no fullness note */ }
+    else if(f.fullness === "full"){ fullN++; if(hit) fullHit++; }
+    else if(f.fullness){ othN++; if(hit) othHit++; }
+    var seen = {};
+    (f.type === "food" ? (f.items || []) : ((f.parts && f.parts.length) ? f.parts : [{name: f.drink}])).forEach(function(it){
+      var key = it.name.toLowerCase();
+      if(seen[key]) return;
+      seen[key] = 1;
+      var s = stats[key] || (stats[key] = {name: it.name, n: 0, hit: 0, sx: {}});
+      s.n++;
+      if(hit){ s.hit++; rs.forEach(function(r){ reactNames(r).forEach(function(nm){ nm = r.type === "pain" ? "Pain" : nm; s.sx[nm] = (s.sx[nm] || 0) + 1; }); }); }
+    });
+  });
+  var orphan = react.filter(function(r){
+    return !state.entries.some(function(f){ return f.type === "food" && f.t < r.t && r.t - f.t <= W; });
+  }).length;
+  var all = Object.keys(stats).map(function(k){ return stats[k]; });
+  var hits = all.filter(function(s){ return s.hit > 0; }).sort(function(a, b){ return (b.hit / b.n) - (a.hit / a.n) || b.n - a.n || a.name.localeCompare(b.name); });
+  var clear = all.filter(function(s){ return s.hit === 0; }).sort(function(a, b){ return b.n - a.n || a.name.localeCompare(b.name); });
+  var h = '<div class="note">Something you ate or drank counts as followed by a reaction when a symptom, or a hard, loose, urgent or painful bathroom trip, was logged within ' + plural(hrs, "hour") + ' after it. You can change this window in Settings.</div>';
+  if(fullN > 0 && othN > 0){
+    h += '<div class="note">Eating when already full: <b>' + fullHit + ' of ' + plural(fullN, "meal") + '</b> had a reaction afterward. Other meals with a fullness note: <b>' + othHit + ' of ' + othN + '</b>.</div>';
+  }else if(fullN > 0){
+    h += '<div class="note">Eating when already full: <b>' + fullHit + ' of ' + plural(fullN, "meal") + '</b> had a reaction afterward.</div>';
+  }
+  if(orphan) h += '<div class="note">' + plural(orphan, "reaction") + ' had no meal logged in the ' + plural(hrs, "hour") + ' before.</div>';
+  h += '<div class="lab">Came before a reaction</div>';
+  if(!hits.length) h += '<p class="calm">Nothing so far.</p>';
+  hits.slice(0, 25).forEach(function(s){
+    var top = Object.keys(s.sx).sort(function(a, b){ return s.sx[b] - s.sx[a]; }).slice(0, 3);
+    h += '<div class="pt"><div class="h"><span class="nm">' + esc(s.name) + '</span><span class="ct">' + s.hit + ' of ' + plural(s.n, "time") + '</span></div>' +
+      '<div class="pbar"><i style="width:' + Math.round(s.hit / s.n * 100) + '%"></i></div>' +
+      '<div class="why">' + esc(top.join(", ")) + (s.n < 3 ? ' · only ' + plural(s.n, "time") + ' logged' : '') + '</div></div>';
+  });
+  if(clear.length){
+    h += '<div class="lab">No reaction logged after these</div><p class="calm">' + clear.slice(0, 40).map(function(s){ return esc(s.name) + ' (' + s.n + ')'; }).join(" · ") + '</p>';
+  }
+  return h;
+}
+
+/* ---------- render: shell ---------- */
+function render(){
+  var log = state.view === "log";
+  $("segLog").setAttribute("aria-pressed", log ? "true" : "false");
+  $("segPat").setAttribute("aria-pressed", state.view === "pat" ? "true" : "false");
+  $("segSleep").setAttribute("aria-pressed", state.view === "sleep" ? "true" : "false");
+  $("daynav").hidden = !log;
+  var td = dayKey(Date.now());
+  $("dayText").textContent = dayLabel(state.day);
+  $("dayPick").value = state.day; $("dayPick").max = td;
+  $("nextDay").disabled = state.day >= td;
+  $("main").innerHTML = log ? renderLog() : (state.view === "sleep" ? renderSleep() : renderPatterns());
+}
+
+/* ---------- sheet ---------- */
+var S = null, clockTimer = null, hideTimer = null;
+function autoSlot(t){
+  var h = new Date(t).getHours();
+  if(h >= 4 && h < 10) return "Breakfast";
+  if(h >= 10 && h < 14) return "Lunch";
+  if(h >= 14 && h < 17) return "Snack";
+  if(h >= 17 && h < 21) return "Dinner";
+  return "Snack";
+}
+function chipsHTML(list, isOn, act){
+  return list.map(function(x){
+    var k = typeof x === "string" ? x : x.k, l = typeof x === "string" ? x : x.l;
+    return '<button class="chip' + (isOn(k) ? ' on' : '') + '" data-act="' + act + '" data-v="' + esc(k) + '" aria-pressed="' + (isOn(k) ? "true" : "false") + '">' + esc(l) + '</button>';
+  }).join("");
+}
+function timeHTML(){
+  var t = S.live ? Date.now() : S.t, k = dayKey(t), td = dayKey(Date.now()), yd = shiftKey(td, -1);
+  var dayNote = k === td ? "" : (k === yd ? "Yesterday" : fmtDay(t));
+  var h = '<div class="tbox"><div class="tline"><span class="t1" id="tclock">' + (S.live ? "Now · " : "") + esc(fmtTime(t)) + '</span><span class="t2" id="tdate">' + esc(dayNote) + '</span>' +
+    '<button class="chip small" data-act="topen" aria-expanded="' + !!S.tOpen + '">' + (S.tOpen ? "Close" : "Change") + '</button></div>';
+  if(S.tOpen){
+    h += '<div class="row"><button class="chip small' + (S.live ? ' on' : '') + '" data-act="now">Now</button><span class="mini">Ago</span>' +
+      [15, 30, 60, 120, 180].map(function(m){ return '<button class="chip small" data-act="ago" data-v="' + m + '">' + (m < 60 ? m + "m" : (m / 60) + "h") + '</button>'; }).join("") + '</div>';
+    h += '<div class="row"><label class="chip small timein">Exact time <input type="time" id="tmIn" value="' + hhmm(t) + '"></label>' +
+      '<button class="chip small' + (k === yd ? ' on' : '') + '" data-act="yest" aria-pressed="' + (k === yd) + '">Yesterday</button></div>';
+  }
+  if(S.type !== "food" && S.type !== "drink"){
+    var f = lastFoodBefore(t, null);
+    if(f && t - f.t <= 36 * 3600000){
+      h += '<div class="ctx"><b>' + esc(fmtDur(t - f.t)) + '</b> after ' + esc((f.slot || "meal").toLowerCase()) + ' <span>' + esc(foodSummary(f)) + '</span></div>';
+    }
+  }
+  return h + '</div>';
+}
+function slotHTML(){
+  return '<div class="row"><span class="mini">Meal</span>' + chipsHTML(SLOTS, function(k){ return S.slot === k; }, "slot") + '</div>';
+}
+function plateQty(id){ var n = 0; S.items.forEach(function(i){ if(i.ref === id) n += (i.qty || 1); }); return n; }
+function plateHTML(){
+  if(!S.items.length) return '<p class="hint" style="margin:0 0 10px">Nothing added yet. Tap a food below. Tap it again for more.</p>';
+  var h = '<ul class="plate">';
+  S.items.forEach(function(it, i){
+    var q = it.qty || 1, u = (it.kind === "food" || it.kind === "part") ? unitStr(it.unit, q) : "";
+    h += '<li class="pl"><div><div class="nm">' + esc(it.kind === "order" && it.detail ? it.detail + ": " + it.name : it.name) + '</div>' +
+      ((it.kind === "meal" && it.detail) ? '<div class="dt">' + esc(it.detail) + '</div>' : '') +
+      ((it.kind === "order" && it.comps && it.comps.length) ? '<div class="dt">Logs: ' + esc(it.comps.map(function(c){ return (c.qty && c.qty !== 1 ? qtyStr(c.qty * q) + " " : (q !== 1 ? qtyStr(q) + " " : "")) + c.name; }).join(", ")) + '</div>' : '') +
+      ((it.kind === "order" && it.drinkName) ? '<div class="dt">+ ' + esc(it.drinkName) + (it.drinkOz ? ' · ' + fmtOz(it.drinkOz * q) + ' oz' : '') + ((it.drinkComps && it.drinkComps.length) ? ' (' + esc(it.drinkComps.map(function(c){ return c.name; }).join(", ")) + ')' : '') + '</div>' : '') +
+      ((it.kind === "order" && it.drinkName && it.drinkSizes && it.drinkSizes.length > 1) ? '<div class="szrow">' + it.drinkSizes.map(function(z, k){ return '<button class="chip small' + (z.n === it.drinkSize ? ' on' : '') + '" data-act="dsize" data-i="' + i + '" data-v="' + k + '" aria-pressed="' + (z.n === it.drinkSize) + '">' + esc(z.n) + ' ' + fmtOz(z.oz) + ' oz</button>'; }).join("") + '</div>' : '') + '</div>' +
+      '<div class="step"><button data-act="dec" data-i="' + i + '" aria-label="' + (q <= 0.5 ? "Remove" : "Less") + '">' + (q <= 0.5 ? "×" : "−") + '</button><span class="q">' + qtyStr(q) + (u ? " " + esc(u) : "") + '</span><button data-act="inc" data-i="' + i + '" aria-label="More">+</button></div></li>';
+  });
+  h += '</ul>';
+  h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">';
+  if(S.items.length > 1) h += '<button class="chip small" data-act="saveplate">Save this plate as a meal</button>';
+  h += '<button class="chip small" data-act="clearplate">Clear all</button></div>';
+  return h;
+}
+function tilesHTML(){
+  if(S.form) return formHTML();
+  var q = S.q.trim().toLowerCase(), items = state.lib.items.slice(), list;
+  if(q){
+    list = items.filter(function(i){ return (i.name + " " + (i.place || "") + " " + (i.parts || []).join(" ")).toLowerCase().indexOf(q) > -1; });
+  }else{
+    list = items.filter(function(i){ return S.tab === "recent" || i.kind === S.tab; });
+  }
+  list.sort(function(a, b){ return (b.last || 0) - (a.last || 0) || (b.uses || 0) - (a.uses || 0) || a.name.localeCompare(b.name); });
+  if(!q && S.tab === "recent") list = list.slice(0, 14);
+  var h = "";
+  if(!q){
+    h += '<div class="tabs">' + [["recent","Recent"],["food","Foods"],["meal","Meals"],["order","Places"]].map(function(t){
+      return '<button class="chip small' + (S.tab === t[0] ? ' on' : '') + '" data-act="tab" data-v="' + t[0] + '" aria-pressed="' + (S.tab === t[0]) + '">' + t[1] + '</button>';
+    }).join("") + '<button class="chip small' + (S.edit ? ' on' : '') + '" data-act="editmode" aria-pressed="' + !!S.edit + '">' + (S.edit ? "Done editing" : "Edit tiles") + '</button></div>';
+  }
+  h += '<div class="tiles">';
+  list.forEach(function(i){
+    var n = plateQty(i.id), label = i.kind === "order" ? (i.place || i.name) : i.name;
+    var sub = i.kind === "order" ? (i.place ? i.name + (i.drink ? " + " + i.drink : "") : "") : (i.kind === "meal" ? (i.parts || []).join(", ") : "");
+    if(n && !S.edit) h += '<span class="tw">';
+    h += '<button class="tile' + (n ? ' on' : '') + (S.edit ? ' ed' : '') + '" data-act="tile" data-id="' + esc(i.id) + '"><span class="n">' + esc(label) + (n ? '<em class="c">×' + qtyStr(n) + '</em>' : '') + '</span>' + (sub ? '<span class="s">' + esc(sub) + '</span>' : '') + '</button>';
+    if(n && !S.edit) h += '<button class="minus" data-act="untile" data-id="' + esc(i.id) + '" aria-label="Remove one ' + esc(label) + '">\u2212</button></span>';
+  });
+  var typed = S.q.trim(), exact = items.some(function(i){ return i.name.toLowerCase() === q; });
+  if(typed && !exact) h += '<button class="tile" data-act="newfood" data-v="' + esc(typed) + '"><span class="n">+ Add “' + esc(typed) + '” as a new food</span></button>';
+  if(!list.length && !typed) h += '<p class="hint">Nothing saved here yet.</p>';
+  h += '</div>';
+  if(!typed) h += '<div class="addrow"><button class="chip small" data-act="newfood">+ New food</button><button class="chip small" data-act="newmeal">+ New meal</button><button class="chip small" data-act="neworder">+ New place order</button></div>';
+  return h;
+}
+function formHTML(){
+  var f = S.form, kindName = f.kind === "food" ? "food" : (f.kind === "meal" ? "meal" : "place order");
+  var h = '<div class="lform"><h3>' + (f.id ? "Edit " : "New ") + kindName + '</h3>';
+  if(f.kind === "order"){
+    h += '<label for="fPlace">Restaurant or place</label><input class="fld" id="fPlace" data-f="place" value="' + esc(f.place) + '" placeholder="Serpent Salt" autocomplete="off">';
+    h += '<label for="fName">What you usually order to eat</label><textarea class="fld" id="fName" data-f="name" rows="2" placeholder="Bacon cheeseburger with sweet potato fries">' + esc(f.name) + '</textarea>';
+    h += '<label for="fComps">What is in it, one per line</label><textarea class="fld" id="fComps" data-f="comps" rows="5" placeholder="2 turkey bacon&#10;1 egg&#10;1 slice cheese&#10;1 English muffin">' + esc(f.comps) + '</textarea><p class="hint">Each line is saved as its own item, named just as you type it.</p>';
+    if(f.showDrink){
+      h += '<label for="fDrink">Drink with it</label><input class="fld" id="fDrink" data-f="drink" value="' + esc(f.drink) + '" placeholder="Hot chocolate" autocomplete="off">';
+      h += '<label for="fSizes">Sizes, one per line (name and ounces)</label><textarea class="fld" id="fSizes" data-f="drinkSizes" rows="4" placeholder="Tall 12&#10;Grande 16&#10;Venti 20">' + esc(f.drinkSizes) + '</textarea><p class="hint">You pick the size each time you log it. Starbucks hot cups: Tall 12, Grande 16, Venti 20, Venti iced 24.</p>';
+      h += '<label for="fDcomps">What is in the drink, one per line</label><textarea class="fld" id="fDcomps" data-f="drinkComps" rows="4" placeholder="Hot chocolate&#10;Almond milk&#10;2 pump peppermint">' + esc(f.drinkComps) + '</textarea>';
+      h += '<label for="fDnote">Note (optional)</label><textarea class="fld" id="fDnote" data-f="drinkNote" rows="2" placeholder="Anything worth remembering">' + esc(f.drinkNote) + '</textarea>';
+    }else{
+      h += '<div style="margin-top:12px"><button class="chip small" data-act="formdrink">+ Add a drink to this order</button></div>';
+    }
+  }else{
+    h += '<label for="fName">Name</label><input class="fld" id="fName" data-f="name" value="' + esc(f.name) + '" placeholder="' + (f.kind === "meal" ? "Beef casserole" : "Scrambled eggs") + '" autocomplete="off">';
+    if(f.kind === "food") h += '<label for="fUnit">One tap adds one of these</label><input class="fld" id="fUnit" data-f="unit" value="' + esc(f.unit) + '" placeholder="scoop, slice, cup, piece" autocomplete="off">';
+    if(f.kind === "meal") h += '<label for="fText">What is in it, one per line</label><textarea class="fld" id="fText" data-f="text" rows="4" placeholder="4 oz meat&#10;3 baby potatoes&#10;½ cup butternut squash">' + esc(f.text) + '</textarea>';
+  }
+  h += '<div class="btns"><button class="chip" data-act="formcancel">Cancel</button>' + (f.id ? '<button class="chip' + (f.arm ? ' on' : '') + '" data-act="formdel">' + (f.arm ? "Tap again to delete" : "Delete") + '</button>' : '') + '<button class="chip on" data-act="formsave">' + (f.id ? "Save" : "Save and add") + '</button></div></div>';
+  return h;
+}
+function extraHTML(){
+  var h = '<div class="lab">How full were you before you started?</div><div class="row">' + chipsHTML(FULL, function(k){ return S.fullness === k; }, "full") + '</div>';
+  h += '<div class="lab">How were you feeling?</div><div class="row">' + chipsHTML(FEELINGS, function(k){ return S.feelings.indexOf(k) > -1; }, "feel") + '</div>';
+  return h;
+}
+function noteHTML(){
+  return '<div class="lab">Note</div><textarea class="fld" id="sNote" rows="2" placeholder="Anything else worth remembering">' + esc(S.note) + '</textarea>';
+}
+function sxHTML(){
+  return '<div class="lab">What are you feeling?</div><div class="row">' + SYMPTOMS.map(function(k){
+    var v = S.sx[k] || 0;
+    return '<button class="chip' + (v ? ' on' : '') + '" data-act="sx" data-v="' + esc(k) + '" aria-pressed="' + !!v + '"' + (v ? ' aria-label="' + esc(k + ", " + SEV[v - 1].toLowerCase()) + '"' : '') + '>' + esc(k) + (v ? dotsHTML(v) : '') + '</button>';
+  }).join("") + '</div><p class="hint">Tap once for mild, again for moderate, again for strong, again to clear.</p>';
+}
+function bmHTML(){
+  var h = '<div class="lab">Stool type</div><ul class="bl">';
+  BRISTOL.forEach(function(b){
+    h += '<li><button class="bb' + (S.bristol === b.n ? ' on' : '') + '" data-act="bristol" data-v="' + b.n + '" aria-pressed="' + (S.bristol === b.n) + '"><span class="num">' + b.n + '</span><span><span class="l1">' + esc(b.l) + '</span><br><span class="l2">' + esc(b.d) + '</span></span></button></li>';
+  });
+  h += '</ul><div class="lab">Anything else</div><div class="row">' + chipsHTML(BM_FLAGS, function(k){ return S.flags.indexOf(k) > -1; }, "flag") + '</div>';
+  return h;
+}
+function whatHTML(){
+  var h = '<div class="row">' + chipsHTML(DRINKS, function(k){ return S.drink === k; }, "drink") + '</div>';
+  if(S.drink === "Other") h += '<input class="fld" id="sOther" placeholder="Name of the drink" value="' + esc(S.other) + '" style="margin-top:8px" autocomplete="off">';
+  return h;
+}
+function ozHTML(){
+  var cs = state.lib.settings.containers || DEF_CONT;
+  return '<div class="row">' + OZ.map(function(n){ var on = S.oz === n && !S.size; return '<button class="chip' + (on ? ' on' : '') + '" data-act="oz" data-v="' + n + '" aria-pressed="' + on + '">' + n + ' oz</button>'; }).join("") + '</div>' +
+    '<div class="lab" style="margin-top:12px">Or pick a container</div><div class="row">' + cs.map(function(c, k){ var on = S.size === c.n && S.oz === c.oz; return '<button class="chip' + (on ? ' on' : '') + '" data-act="cont" data-v="' + k + '" aria-pressed="' + on + '">' + esc(c.n) + ' ' + fmtOz(c.oz) + ' oz</button>'; }).join("") + '</div>';
+}
+function drinkHTML(){
+  return '<div class="lab">What</div><div id="sDW">' + whatHTML() + '</div><div class="lab">How much</div><div id="sOzC">' + ozHTML() + '</div>' +
+    '<label class="srow" style="margin-top:10px">Or type ounces<input class="fld" id="sOz" type="number" inputmode="decimal" min="0" step="1" value="' + (OZ.indexOf(S.oz) > -1 ? "" : esc(S.oz)) + '"></label>';
+}
+function settingsHTML(){
+  var st = state.lib.settings;
+  var h = '<div class="lab">Usual meal times</div>';
+  SLOTS.forEach(function(s){ h += '<label class="srow">' + s + '<input class="fld" type="time" data-slot="' + s + '" value="' + esc(st.slotTimes[s]) + '"></label>'; });
+  h += '<div class="lab">Daily drink goal</div><label class="srow">Ounces per day<input class="fld" type="number" inputmode="numeric" min="8" step="8" data-goal value="' + (st.waterGoal || 64) + '"></label>';
+  h += '<div class="lab">Pain</div><label class="srow">Count as a reaction at or above<input class="fld" type="number" inputmode="numeric" min="1" max="10" step="1" data-painmin value="' + (st.painMin || 5) + '"></label><p class="hint">A pain check at this level or higher is treated like a symptom in Patterns, out of 10.</p>';
+  h += '<div class="lab">Sleep goal</div><label class="srow">Hours per night<input class="fld" type="number" inputmode="decimal" min="4" max="12" step="0.5" data-sleepgoal value="' + (st.sleepGoal || 8) + '"></label>';
+  h += '<div class="lab">My containers</div><label for="stCont" class="hint" style="display:block;margin:0 0 6px">One per line, name and ounces. These show up as buttons when you log a drink.</label><textarea class="fld" id="stCont" rows="5" data-containers>' + esc(sizesText(st.containers || DEF_CONT)) + '</textarea>';
+  h += '<div class="lab">Link reactions to meals within</div><div class="row">' + [6, 12, 24].map(function(n){
+    return '<button class="chip' + (st.windowH === n ? ' on' : '') + '" data-act="win" data-v="' + n + '" aria-pressed="' + (st.windowH === n) + '">' + n + ' hours</button>';
+  }).join("") + '</div><p class="hint">Used for the lines under symptoms and for the Patterns tab.</p>';
+  h += '<div class="lab">Your data</div><p class="hint" id="stText" style="margin-top:0">' + esc(statusText()) + '</p><div class="row"><button class="chip" data-act="backup">Back up everything</button><button class="chip" data-act="restore">Restore from backup</button><button class="chip" data-act="export">Spreadsheet (CSV)</button></div><p class="hint" id="bkText">' + esc(backupNote()) + ' A backup holds every entry, saved foods, meals, orders and settings. Restoring adds to what you have and never deletes anything.</p><input type="file" id="restoreFile" accept=".json,application/json" hidden>';
+  return h;
+}
+function paint(id, html){ var el = $(id); if(el) el.innerHTML = html; }
+function paintTime(){ paint("sTime", timeHTML()); }
+function paintPlate(){ paint("sPlate", plateHTML()); }
+function paintTiles(){ paint("sTiles", tilesHTML()); paint("sPlace", placeHTML()); }
+function placesList(){
+  var seen = {}, out = [];
+  state.lib.items.forEach(function(i){ if(i.kind === "order" && i.place && !seen[i.place.toLowerCase()]){ seen[i.place.toLowerCase()] = 1; out.push(i.place); } });
+  return out.sort(function(a, b){ return a.localeCompare(b); });
+}
+function placeHTML(){
+  if(!S || S.type !== "food" || S.form) return "";
+  var pl = placesList(), sel = S.placeSel || "";
+  var h = '<div class="lab">Restaurants</div><div class="dd"><select class="fld" data-sel="place" aria-label="Restaurant"><option value="">Choose a restaurant\u2026</option>';
+  pl.forEach(function(p){ h += '<option value="' + esc(p) + '"' + (p === sel ? ' selected' : '') + '>' + esc(p) + '</option>'; });
+  h += '<option value="__new">+ Add a restaurant</option></select>';
+  if(sel){
+    var menu = state.lib.items.filter(function(i){ return i.kind === "order" && i.place === sel; });
+    h += '<select class="fld" data-sel="menu" aria-label="What I usually get at ' + esc(sel) + '"><option value="">What I usually get\u2026</option>';
+    menu.forEach(function(i){ h += '<option value="' + esc(i.id) + '">' + esc(i.name) + '</option>'; });
+    h += '<option value="__newitem">+ Add something new here</option></select>';
+  }
+  return h + '</div>';
+}
+function paintSlot(){ paint("sSlot", slotHTML()); }
+function paintExtra(){ paint("sExtra", extraHTML()); }
+
+function openSheet(type, entry, preset){
+  var now = Date.now(), onToday = state.day === dayKey(now);
+  S = {type: type, id: entry ? entry.id : null,
+       t: entry ? entry.t : (onToday ? now : withTime(keyDate(state.day).getTime(), "12:00")),
+       live: !entry && onToday, note: (entry && entry.note) || "", arm: false, tOpen: false};
+  if(type === "food"){
+    S.items = entry ? JSON.parse(JSON.stringify(entry.items || [])) : [];
+    S.slot = entry ? (entry.slot || "") : autoSlot(S.t);
+    S.fullness = (entry && entry.fullness) || "";
+    S.feelings = entry && entry.feelings ? entry.feelings.slice() : [];
+    S.tab = "recent"; S.q = ""; S.form = null; S.edit = false; S.placeSel = "";
+  }
+  if(type === "drink"){
+    var ld = state.lib.settings.lastDrink || {};
+    S.drink = entry ? (DRINKS.indexOf(entry.drink) > -1 ? entry.drink : "Other") : ((preset && preset.drink) || ld.d || "Water");
+    S.other = (entry && DRINKS.indexOf(entry.drink) === -1) ? entry.drink : "";
+    S.oz = entry ? entry.oz : ((preset && preset.oz) || ld.oz || 8);
+    S.size = entry ? (entry.size || "") : ((preset && preset.size) || "");
+  }
+  if(type === "pain"){
+    S.level = entry ? entry.level : null; S.where = entry && entry.where ? entry.where.slice() : [];
+    S.check = entry ? (entry.check || "") : ((preset && preset.check) || "");
+  }
+  if(type === "sleep"){
+    var stt = state.lib.settings, nowT = Date.now(), hr = new Date(nowT).getHours();
+    S.live = false; S.nap = entry ? !!entry.nap : !!(preset && preset.nap);
+    S.quality = 0; S.wakes = null; S.feel = ""; S.flags = [];
+    if(entry){
+      S.t = entry.t; S.bedTod = hhmm(entry.start || entry.t - 8 * 3600000);
+      S.quality = entry.quality || 0; S.wakes = entry.wakes == null ? null : entry.wakes; S.feel = entry.feel || ""; S.flags = (entry.flags || []).slice();
+    }else if(S.nap){ S.t = nowT; S.bedTod = hhmm(nowT - 3600000); }
+    else{ S.t = (hr >= 3 && hr < 13) ? nowT : resolveTime(withTime(nowT, stt.lastWake || "07:00")); S.bedTod = stt.lastBed || "22:30"; }
+    slCalc();
+  }
+  if(type === "symptom"){ S.sx = {}; ((entry && entry.symptoms) || []).forEach(function(s){ S.sx[s.k] = s.sev; }); }
+  if(type === "bm"){ S.bristol = (entry && entry.bristol) || 0; S.flags = entry && entry.flags ? entry.flags.slice() : []; }
+  var el = $("sheet");
+  el.setAttribute("data-type", type === "settings" ? "food" : type);
+  var titles = {food: "Log food", drink: "Log a drink", symptom: "Log symptoms", bm: "Log bathroom", sleep: S.nap ? "Log a nap" : "Log sleep", pain: "Log pain", settings: "Settings"};
+  $("shTitle").textContent = entry ? "Edit entry" : titles[type];
+  $("shSave").textContent = type === "settings" ? "Done" : (entry ? "Save changes" : "Save");
+  var del = $("shDelete"); del.hidden = !entry; del.textContent = "Delete"; del.classList.remove("armed");
+  var h;
+  if(type === "settings") h = settingsHTML();
+  else if(type === "food") h = '<div id="sTime">' + timeHTML() + '</div><div id="sSlot">' + slotHTML() + '</div><div class="lab">What you ate</div><div id="sPlate">' + plateHTML() + '</div>' +
+    '<input class="fld" id="sq" type="search" placeholder="Search or type a new food" autocomplete="off" autocapitalize="off" enterkeyhint="done"><div id="sTiles">' + tilesHTML() + '</div><div id="sPlace">' + placeHTML() + '</div><div id="sExtra">' + extraHTML() + '</div>' + noteHTML();
+  else if(type === "drink") h = '<div id="sTime">' + timeHTML() + '</div>' + drinkHTML() + noteHTML();
+  else if(type === "pain") h = '<div id="sTime">' + timeHTML() + '</div><div id="sPain">' + painFormHTML() + '</div>' + noteHTML();
+  else if(type === "sleep") h = '<div id="sSleep">' + sleepFormHTML() + '</div>' + noteHTML();
+  else if(type === "symptom") h = '<div id="sTime">' + timeHTML() + '</div><div id="sSx">' + sxHTML() + '</div>' + noteHTML();
+  else h = '<div id="sTime">' + timeHTML() + '</div><div id="sBm">' + bmHTML() + '</div>' + noteHTML();
+  $("shBody").innerHTML = '<div class="in">' + h + '</div>';
+  $("shBody").scrollTop = 0;
+  clearTimeout(hideTimer);
+  el.hidden = false;
+  document.documentElement.style.overflow = "hidden";
+  requestAnimationFrame(function(){ el.classList.add("show"); el.focus({preventScroll: true}); });
+  clearInterval(clockTimer);
+  clockTimer = setInterval(function(){
+    if(S && S.live && $("tclock")){ $("tclock").textContent = "Now · " + fmtTime(Date.now()); $("tdate").textContent = ""; }
+  }, 15000);
+}
+function closeSheet(){
+  var el = $("sheet");
+  el.classList.remove("show");
+  clearInterval(clockTimer);
+  document.documentElement.style.overflow = "";
+  var wasSettings = S && S.type === "settings";
+  S = null;
+  hideTimer = setTimeout(function(){ el.hidden = true; }, 230);
+  if(wasSettings) render();
+}
+
+/* sheet actions */
+function addToPlate(it){
+  var ex = null;
+  S.items.forEach(function(x){ if(x.ref === it.id) ex = x; });
+  if(ex){ ex.qty = (ex.qty || 1) + 1; return; }
+  S.items.push({ref: it.id, kind: it.kind, name: it.name, qty: 1, unit: it.unit || "",
+    detail: it.kind === "order" ? (it.place || "") : (it.kind === "meal" ? (it.parts || []).join("; ") : ""),
+    drinkName: it.drink || "", drinkSizes: it.drinkSizes ? plain(it.drinkSizes) : [], drinkSize: it.drinkSize || "", drinkOz: it.drinkOz || 0, drinkNote: it.drinkNote || "", comps: it.comps ? plain(it.comps) : [], drinkComps: it.drinkComps ? plain(it.drinkComps) : []});
+}
+function resolveTime(t){ return t > Date.now() + 300000 ? addDays(t, -1) : t; }
+function mkForm(kind, o){
+  return Object.assign({kind: kind, id: null, name: "", unit: "", text: "", place: "", arm: false, drink: "", drinkSizes: "", drinkNote: "", showDrink: false, comps: "", drinkComps: ""}, o || {});
+}
+var H = {
+  pcheck: function(b, v){ S.check = S.check === v && v !== "" ? "" : v; paint("sPain", painFormHTML()); },
+  plevel: function(b, v){ S.level = S.level === +v ? null : +v; paint("sPain", painFormHTML()); },
+  pwhere: function(b, v){ var i = S.where.indexOf(v); if(i > -1) S.where.splice(i, 1); else S.where.push(v); paint("sPain", painFormHTML()); },
+  slday: function(b, v){
+    var k = v === "today" ? dayKey(Date.now()) : shiftKey(dayKey(Date.now()), -1);
+    S.t = Math.min(withDay(S.t, k), Date.now()); slCalc(); paint("sSleep", sleepFormHTML());
+  },
+  slnow: function(){ S.t = Date.now(); slCalc(); paint("sSleep", sleepFormHTML()); },
+  slwake: function(b, v){ S.t = Math.min(resolveTime(withTime(S.t, v)), Date.now()); slCalc(); paint("sSleep", sleepFormHTML()); },
+  slbed: function(b, v){ S.bedTod = v; slCalc(); paint("sSleep", sleepFormHTML()); },
+  slnap: function(b, v){ S.bedTod = hhmm(S.t - (+v) * 60000); slCalc(); paint("sSleep", sleepFormHTML()); },
+  slq: function(b, v){ S.quality = S.quality === +v ? 0 : +v; paint("sSleep", sleepFormHTML()); },
+  slwk: function(b, v){ S.wakes = S.wakes === +v ? null : +v; paint("sSleep", sleepFormHTML()); },
+  slfeel: function(b, v){ S.feel = S.feel === v ? "" : v; paint("sSleep", sleepFormHTML()); },
+  slflag: function(b, v){ var i = S.flags.indexOf(v); if(i > -1) S.flags.splice(i, 1); else S.flags.push(v); paint("sSleep", sleepFormHTML()); },
+  topen: function(){ S.tOpen = !S.tOpen; paintTime(); },
+  now: function(){ S.live = true; S.t = Date.now(); S.tOpen = false; paintTime(); },
+  ago: function(b, v){ S.live = false; S.t = Date.now() - (+v) * 60000; S.tOpen = false; paintTime(); },
+  yest: function(){
+    var base = S.live ? Date.now() : S.t, td = dayKey(Date.now()), yd = shiftKey(td, -1);
+    S.live = false; S.tOpen = false; S.t = withDay(base, dayKey(base) === yd ? td : yd); paintTime();
+  },
+  drink: function(b, v){ S.drink = v; paint("sDW", whatHTML()); },
+  cont: function(b, v){ var c = (state.lib.settings.containers || DEF_CONT)[+v]; if(!c) return; S.oz = c.oz; S.size = c.n; var i = $("sOz"); if(i) i.value = ""; paint("sOzC", ozHTML()); },
+  oz: function(b, v){ S.size = ""; S.oz = +v; var i = $("sOz"); if(i) i.value = ""; paint("sOzC", ozHTML()); },
+  slot: function(b, v){
+    if(S.slot === v) return;
+    S.slot = v;
+    var base = S.live ? Date.now() : S.t;
+    S.live = false;
+    S.t = resolveTime(withTime(base, state.lib.settings.slotTimes[v]));
+    paintTime(); paintSlot();
+  },
+  tile: function(b){
+    var it = findItem(b.getAttribute("data-id"));
+    if(!it) return;
+    if(S.edit){
+      S.form = mkForm(it.kind, {id: it.id, name: it.name, unit: it.unit || "", text: (it.parts || []).join("\n"), place: it.place || "", drink: it.drink || "", drinkSizes: sizesText(it.drinkSizes), drinkNote: it.drinkNote || "", showDrink: !!it.drink, comps: compsText(it.comps), drinkComps: compsText(it.drinkComps)});
+      paintTiles(); return;
+    }
+    addToPlate(it);
+    if(S.q){ S.q = ""; $("sq").value = ""; }
+    paintPlate(); paintTiles();
+  },
+  dsize: function(b, v, i){
+    var it = S.items[+i]; if(!it || !it.drinkSizes) return;
+    var z = it.drinkSizes[+v]; if(!z) return;
+    it.drinkSize = z.n; it.drinkOz = z.oz; paintPlate();
+  },
+  untile: function(b){
+    var id = b.getAttribute("data-id"), idx = -1;
+    S.items.forEach(function(x, k){ if(x.ref === id) idx = k; });
+    if(idx < 0) return;
+    var it = S.items[idx], q = it.qty || 1;
+    if(q > 1) it.qty = q - 1; else S.items.splice(idx, 1);
+    paintPlate(); paintTiles();
+  },
+  clearplate: function(){ S.items = []; paintPlate(); paintTiles(); },
+  inc: function(b, v, i){ var it = S.items[+i]; if(!it) return; var q = it.qty || 1; it.qty = q < 1 ? 1 : q + 1; paintPlate(); paintTiles(); },
+  dec: function(b, v, i){
+    var it = S.items[+i]; if(!it) return; var q = it.qty || 1;
+    if(q > 1) it.qty = q - 1; else if(q > 0.5) it.qty = 0.5; else S.items.splice(+i, 1);
+    paintPlate(); paintTiles();
+  },
+  tab: function(b, v){ S.tab = v; paintTiles(); },
+  editmode: function(){ S.edit = !S.edit; paintTiles(); },
+  newfood: function(b, v){ S.form = mkForm("food", {name: v || ""}); paintTiles(); },
+  newmeal: function(){ S.form = mkForm("meal"); paintTiles(); },
+  neworder: function(){ S.form = mkForm("order", {showDrink: true}); paintTiles(); },
+  saveplate: function(){
+    S.form = mkForm("meal", {text: S.items.map(itemText).join("\n"), fromPlate: true});
+    paintTiles();
+  },
+  formcancel: function(){ S.form = null; paintTiles(); },
+  formdrink: function(){ S.form.showDrink = true; paintTiles(); },
+  formdel: function(){
+    var f = S.form;
+    if(!f.arm){ f.arm = true; paintTiles(); return; }
+    state.lib.items = state.lib.items.filter(function(i){ return i.id !== f.id; });
+    touchLib(); S.form = null; paintTiles(); toast("Removed from your list");
+  },
+  formsave: function(){
+    var f = S.form, name = (f.name || "").trim();
+    if(f.kind === "order" && !(f.place || "").trim()){ toast("Add the restaurant name"); return; }
+    if(!name){ toast("Give it a name"); return; }
+    var dn = (f.drink || "").trim(), dsz = parseSizes(f.drinkSizes);
+    if(f.kind === "order" && f.showDrink && dn && !dsz.length){ toast("Add at least one size with ounces, like Venti 20."); return; }
+    var item = f.id ? findItem(f.id) : null, isNew = !item;
+    if(isNew){ item = {id: uid("i_"), kind: f.kind, uses: 0, last: 0}; state.lib.items.push(item); }
+    item.name = name;
+    if(f.kind === "food") item.unit = (f.unit || "").trim();
+    if(f.kind === "meal") item.parts = (f.text || "").split("\n").map(function(x){ return x.trim(); }).filter(Boolean);
+    if(f.kind === "order"){
+      item.place = (f.place || "").trim();
+      item.comps = parseComps(f.comps);
+      item.drinkComps = (f.showDrink && dn) ? parseComps(f.drinkComps) : [];
+      var hasD = f.showDrink && dn;
+      var keep = dsz[0];
+      dsz.forEach(function(z){ if(z.n === item.drinkSize) keep = z; });
+      item.drink = hasD ? dn : ""; item.drinkSizes = hasD ? dsz : []; item.drinkSize = hasD ? keep.n : ""; item.drinkOz = hasD ? keep.oz : 0; item.drinkNote = hasD ? (f.drinkNote || "").trim() : "";
+    }
+    touchLib();
+    if(isNew){ if(f.fromPlate) S.items = []; addToPlate(item); }
+    S.form = null; paintPlate(); paintTiles();
+  },
+  full: function(b, v){ S.fullness = S.fullness === v ? "" : v; paintExtra(); },
+  feel: function(b, v){ var i = S.feelings.indexOf(v); if(i > -1) S.feelings.splice(i, 1); else S.feelings.push(v); paintExtra(); },
+  sx: function(b, v){ var n = (S.sx[v] || 0) + 1; if(n > 3) delete S.sx[v]; else S.sx[v] = n; paint("sSx", sxHTML()); },
+  bristol: function(b, v){ S.bristol = S.bristol === +v ? 0 : +v; paint("sBm", bmHTML()); },
+  flag: function(b, v){ var i = S.flags.indexOf(v); if(i > -1) S.flags.splice(i, 1); else S.flags.push(v); paint("sBm", bmHTML()); },
+  win: function(b, v){ state.lib.settings.windowH = +v; touchLib(); $("shBody").querySelector(".in").innerHTML = settingsHTML(); },
+  export: function(){ exportCsv(); },
+  backup: function(){ backupAll(); },
+  restore: function(){ var f = $("restoreFile"); if(f){ f.value = ""; f.click(); } }
+};
+$("shBody").addEventListener("click", function(e){
+  var b = e.target.closest("[data-act]");
+  if(!b || !S) return;
+  var a = b.getAttribute("data-act");
+  if(H[a]) H[a](b, b.getAttribute("data-v"), b.getAttribute("data-i"));
+});
+$("shBody").addEventListener("change", function(e){
+  var t = e.target, k = t && t.getAttribute && t.getAttribute("data-sel");
+  if(!k || !S) return;
+  var v = t.value;
+  if(k === "place"){
+    if(v === "__new"){ S.form = mkForm("order", {showDrink: false}); S.placeSel = ""; paintTiles(); return; }
+    S.placeSel = v; paint("sPlace", placeHTML()); return;
+  }
+  if(k === "menu"){
+    if(v === "__newitem"){ S.form = mkForm("order", {place: S.placeSel, showDrink: false}); paintTiles(); return; }
+    var it = findItem(v);
+    if(it){ addToPlate(it); paintPlate(); paintTiles(); }
+  }
+});
+$("shBody").addEventListener("input", function(e){
+  var t = e.target;
+  if(!S) return;
+  if(t.id === "sq"){ S.q = t.value; paintTiles(); }
+  else if(t.id === "sNote"){ S.note = t.value; }
+  else if(t.id === "sOz"){ var ov = parseFloat(t.value); if(ov > 0){ S.size = ""; S.oz = ov; paint("sOzC", ozHTML()); } }
+  else if(t.id === "sOther"){ S.other = t.value; }
+  else if(t.getAttribute("data-f") && S.form){ S.form[t.getAttribute("data-f")] = t.value; }
+});
+$("shBody").addEventListener("keydown", function(e){
+  if(e.key !== "Enter" || !S) return;
+  if(e.target.id === "sq"){
+    e.preventDefault();
+    var q = S.q.trim().toLowerCase();
+    if(!q) return;
+    var hit = state.lib.items.filter(function(i){ return (i.name + " " + (i.place || "")).toLowerCase().indexOf(q) > -1; })[0];
+    if(hit){ addToPlate(hit); S.q = ""; e.target.value = ""; paintPlate(); paintTiles(); }
+    else H.newfood(null, S.q.trim());
+  }
+});
+$("shBody").addEventListener("change", function(e){
+  var t = e.target;
+  if(!S) return;
+  if(t.id === "tmIn" && t.value){
+    var base = S.live ? Date.now() : S.t;
+    S.live = false; S.tOpen = false; S.t = resolveTime(withTime(base, t.value));
+    paintTime();
+  }else if(t.id === "dayIn" && t.value){
+    var td = dayKey(Date.now()), k = t.value > td ? td : t.value, b2 = S.live ? Date.now() : S.t;
+    S.live = false; S.t = withDay(b2, k);
+    paintTime();
+  }else if(t.hasAttribute("data-painmin")){
+    var pm = parseInt(t.value, 10);
+    if(pm >= 1 && pm <= 10){ state.lib.settings.painMin = pm; touchLib(); }
+  }else if(t.hasAttribute("data-sleepgoal")){
+    var sg = parseFloat(t.value);
+    if(sg >= 3 && sg <= 14){ state.lib.settings.sleepGoal = sg; touchLib(); }
+  }else if(t.id === "slWakeIn" && t.value){
+    S.t = Math.min(resolveTime(withTime(S.t, t.value)), Date.now()); slCalc(); paint("sSleep", sleepFormHTML());
+  }else if(t.id === "slBedIn" && t.value){
+    S.bedTod = t.value; slCalc(); paint("sSleep", sleepFormHTML());
+  }else if(t.id === "slDay" && t.value){
+    var tdk = dayKey(Date.now()), kk = t.value > tdk ? tdk : t.value;
+    S.t = Math.min(withDay(S.t, kk), Date.now()); slCalc(); paint("sSleep", sleepFormHTML());
+  }else if(t.hasAttribute("data-containers")){
+    var cl = parseSizes(t.value);
+    if(cl.length){ state.lib.settings.containers = cl; touchLib(); }
+  }else if(t.hasAttribute("data-goal")){
+    var g = parseInt(t.value, 10);
+    if(g > 0){ state.lib.settings.waterGoal = g; touchLib(); }
+  }else if(t.getAttribute("data-slot") && t.value){
+    state.lib.settings.slotTimes[t.getAttribute("data-slot")] = t.value;
+    touchLib();
+  }
+});
+
+function saveSheet(){
+  var b = $("shSave");
+  if(!S){ closeSheet(); toast("That screen had expired. Please try again."); return; }
+  if(b.disabled) return;
+  b.disabled = true;
+  try{ saveSheetInner(); }
+  catch(err){ toast("Couldn't save: " + ((err && err.message) || "unknown problem") + ". Nothing was lost."); }
+  setTimeout(function(){ b.disabled = false; }, 400);
+}
+function saveSheetInner(){
+  if(!S) return;
+  if(S.type === "settings"){ closeSheet(); return; }
+  var t = S.live ? Date.now() : S.t, e, drinksAdded = 0;
+  if(S.type === "food"){
+    if(S.form){
+      var ff = S.form;
+      if((ff.name || "").trim() || (ff.place || "").trim() || (ff.text || "").trim()){ H.formsave(); if(S.form) return; }
+      else { S.form = null; }
+    }
+    if(!S.items.length){ toast("Add at least one food first"); return; }
+    e = {id: S.id || uid("e_"), type: "food", t: t, slot: S.slot || "", items: S.items, fullness: S.fullness, feelings: S.feelings, note: S.note.trim()};
+    S.items.forEach(function(it){
+      var l = findItem(it.ref);
+      if(l){ if(!S.id) l.uses = (l.uses || 0) + 1; if(t > (l.last || 0)) l.last = t; if(it.drinkSize){ l.drinkSize = it.drinkSize; l.drinkOz = it.drinkOz; } }
+    });
+    touchLib();
+    var drinkSrc = S.items;
+    e.items = expandItems(S.items);
+    if(!S.id){
+      drinkSrc.forEach(function(it){
+        if(it.drinkName && it.drinkOz > 0){
+          var dq = it.qty || 1;
+          saveEntry({id: uid("e_"), type: "drink", t: t, drink: it.drinkName, size: it.drinkSize || "", oz: it.drinkOz * dq, note: it.drinkNote || "",
+            parts: (it.drinkComps || []).map(function(c){ return {name: c.name, qty: (c.qty || 1) * dq, unit: c.unit || ""}; })});
+          drinksAdded++;
+        }
+      });
+    }
+  }else if(S.type === "drink"){
+    var dn = S.drink === "Other" ? (S.other || "").trim() : S.drink;
+    if(!dn){ toast("Name the drink"); return; }
+    if(!(S.oz > 0)){ toast("Pick an amount"); return; }
+    e = {id: S.id || uid("e_"), type: "drink", t: t, drink: dn, size: S.size || "", oz: S.oz, note: S.note.trim()};
+    if(S.id){ state.entries.forEach(function(x){ if(x.id === S.id && x.parts) e.parts = x.parts; }); }
+    state.lib.settings.lastDrink = {d: S.drink, oz: S.oz};
+    touchLib();
+  }else if(S.type === "pain"){
+    if(S.level == null){ toast("Tap a number from 0 to 10"); return; }
+    e = {id: S.id || uid("e_"), type: "pain", t: t, level: S.level, where: S.where.slice(), check: S.check || "", note: S.note.trim()};
+  }else if(S.type === "sleep"){
+    var dur = S.t - S.bed;
+    if(!(dur > 0)){ toast("Bed time has to be before wake time."); return; }
+    if(!S.nap && dur > 16 * 3600000){ toast("That is over 16 hours. Check AM and PM."); return; }
+    if(S.nap && dur > 8 * 3600000){ toast("A nap over 8 hours? Check the times."); return; }
+    e = {id: S.id || uid("e_"), type: "sleep", t: t, start: S.bed, nap: !!S.nap, quality: S.quality || 0, wakes: S.wakes == null ? null : S.wakes, feel: S.feel || "", flags: S.flags.slice(), note: S.note.trim()};
+    if(!S.nap){ state.lib.settings.lastBed = S.bedTod; state.lib.settings.lastWake = hhmm(S.t); touchLib(); }
+  }else if(S.type === "symptom"){
+    var sy = SYMPTOMS.filter(function(k){ return S.sx[k]; }).map(function(k){ return {k: k, sev: S.sx[k]}; });
+    if(!sy.length){ toast("Pick at least one symptom"); return; }
+    e = {id: S.id || uid("e_"), type: "symptom", t: t, symptoms: sy, note: S.note.trim()};
+  }else{
+    e = {id: S.id || uid("e_"), type: "bm", t: t, bristol: S.bristol || 0, flags: S.flags, note: S.note.trim()};
+  }
+  saveEntry(e);
+  state.day = dayKey(t);
+  closeSheet();
+  try{
+    render();
+    toast((e.type === "pain" ? "Pain " + e.level + " of 10 saved" : e.type === "sleep" ? "Sleep saved \u00b7 " + fmtDur(e.t - e.start) : "Saved \u00b7 " + fmtTime(t)) + (drinksAdded ? " \u00b7 drink added" : ""));
+    var row = document.querySelector('.ev[data-id="' + e.id + '"]');
+    if(row) row.scrollIntoView({block: "nearest"});
+  }catch(err){
+    toast("Saved, but the list couldn't refresh (" + ((err && err.message) || "error") + "). Reopen the page.");
+  }
+}
+$("shSave").addEventListener("click", saveSheet);
+$("shCancel2").addEventListener("click", function(){ closeSheet(); });
+$("shDelete").addEventListener("click", function(){
+  if(!S || !S.id) return;
+  var b = $("shDelete");
+  if(!S.arm){
+    S.arm = true; b.textContent = "Tap again to delete"; b.classList.add("armed");
+    setTimeout(function(){ if(S && S.arm){ S.arm = false; b.textContent = "Delete"; b.classList.remove("armed"); } }, 4000);
+    return;
+  }
+  var id = S.id;
+  removeEntry(id); closeSheet(); render(); toast("Entry deleted");
+});
+document.addEventListener("keydown", function(e){ if(e.key === "Escape" && S) closeSheet(); });
+
+/* ---------- export ---------- */
+function csvCell(v){ var s = v == null ? "" : String(v); return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
+var BK_KEY = "foodGutLog:lastBackup";
+function backupNote(){
+  var t = 0; try{ t = +localStorage.getItem(BK_KEY) || 0; }catch(e){}
+  return t ? "Last backup: " + dayKey(t) + " at " + fmtTime(t) + "." : "No backup made yet.";
+}
+function blobSave(name, text, mime){
+  try{
+    var u = URL.createObjectURL(new Blob([text], {type: mime}));
+    var a = document.createElement("a");
+    a.href = u; a.download = name; a.style.display = "none";
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(u); }, 1500);
+    return true;
+  }catch(e){ return false; }
+}
+async function backupAll(){
+  var data = JSON.stringify({app: "body-clues", version: 1, saved: Date.now(), entries: state.entries, items: state.lib.items, settings: state.lib.settings}, null, 1);
+  try{
+    var dl = await window.claude.use("downloads");
+    if(!dl) throw new Error("none");
+    await dl.save({filename: "body-clues-backup-" + dayKey(Date.now()) + ".json", data: data});
+    try{ localStorage.setItem(BK_KEY, String(Date.now())); }catch(e){}
+    var n = $("bkText"); if(n) n.textContent = backupNote();
+    toast("Backup saved");
+  }catch(err){
+    if(err && err.code === "declined") return;
+    if(blobSave("body-clues-backup-" + dayKey(Date.now()) + ".json", data, "application/json")){
+      try{ localStorage.setItem(BK_KEY, String(Date.now())); }catch(e){}
+      var n2 = $("bkText"); if(n2) n2.textContent = backupNote();
+      toast("Backup saved"); return;
+    }
+    try{ await navigator.clipboard.writeText(data); toast("Backup copied as text. Paste it into a note."); }
+    catch(e2){ toast("Couldn't save the backup here"); }
+  }
+}
+function restoreFrom(text){
+  var p;
+  try{ p = JSON.parse(text); }catch(e){ toast("That file isn't a backup"); return; }
+  if(!p || (p.app !== "food-gut-log" && p.app !== "body-clues") || !Array.isArray(p.entries)){ toast("That file isn't a backup"); return; }
+  var have = {}; state.entries.forEach(function(e){ have[e.id] = 1; });
+  var added = 0;
+  p.entries.forEach(function(e){
+    if(e && e.id && typeof e.t === "number" && !have[e.id]){ state.entries.push(e); have[e.id] = 1; added++; saveLocal(); putEntry(e); }
+  });
+  var haveI = {}; state.lib.items.forEach(function(i){ haveI[i.id] = 1; });
+  var addedI = 0;
+  (p.items || []).forEach(function(i){ if(i && i.id && !haveI[i.id]){ state.lib.items.push(i); haveI[i.id] = 1; addedI++; } });
+  if(p.settings && !state.lib.touched){ state.lib = mergeLib({items: state.lib.items, settings: p.settings, touched: true}); }
+  touchLib();
+  saveLocal();
+  render();
+  toast("Restored " + added + " entries and " + addedI + " saved items");
+}
+document.addEventListener("change", function(e){
+  if(e.target && e.target.id === "restoreFile" && e.target.files && e.target.files[0]){
+    var r = new FileReader();
+    r.onload = function(){ restoreFrom(String(r.result || "")); };
+    r.onerror = function(){ toast("Couldn't read that file"); };
+    r.readAsText(e.target.files[0]);
+  }
+});
+async function exportCsv(){
+  var rows = [["Date","Time","Type","Meal","What","Amount (oz)","Fullness before eating","Feelings","Symptoms","Stool type","Bathroom notes","Note"]];
+  state.entries.slice().sort(function(a, b){ return a.t - b.t; }).forEach(function(e){
+    var d = dayKey(e.t), tm = fmtTime(e.t);
+    if(e.type === "food") rows.push([d, tm, "Food", e.slot || "", foodSummary(e), "", fullLabel(e.fullness), (e.feelings || []).join("; "), "", "", "", e.note || ""]);
+    else if(e.type === "drink") rows.push([d, tm, "Drink", "", e.drink + (e.size ? " (" + e.size + ")" : ""), e.oz, "", "", "", "", "", e.note || ""]);
+    else if(e.type === "symptom") rows.push([d, tm, "Symptom", "", "", "", "", "", (e.symptoms || []).map(function(s){ return s.k + " (" + SEV[s.sev - 1].toLowerCase() + ")"; }).join("; "), "", "", e.note || ""]);
+    else if(e.type === "pain") rows.push([d, tm, "Pain", "", "", "", "", "", "Pain " + e.level + "/10" + ((e.where || []).length ? " (" + e.where.join("; ") + ")" : ""), "", "", [e.check ? PCHECK[e.check] + " check" : "", e.note || ""].filter(Boolean).join(" | ")]);
+    else if(e.type === "sleep") rows.push([d, tm, e.nap ? "Nap" : "Sleep", "", (e.nap ? "Napped " : "Slept ") + fmtDur(slDur(e)) + " (bed " + fmtTime(e.start || e.t) + ")", "", "", e.feel || "", "", "", "", [e.quality ? "Quality: " + SQ[e.quality] : "", e.wakes != null ? wakesLabel(e.wakes) : "", (e.flags || []).join("; "), e.note || ""].filter(Boolean).join(" | ")]);
+    else rows.push([d, tm, "Bathroom", "", "", "", "", "", "", e.bristol || "", (e.flags || []).join("; "), e.note || ""]);
+  });
+  var csv = rows.map(function(r){ return r.map(csvCell).join(","); }).join("\r\n");
+  try{
+    var dl = await window.claude.use("downloads");
+    if(!dl) throw new Error("none");
+    await dl.save({filename: "body-clues-" + dayKey(Date.now()) + ".csv", data: "﻿" + csv});
+    toast("Spreadsheet saved");
+  }catch(err){
+    if(err && err.code === "declined") return;
+    if(blobSave("body-clues-" + dayKey(Date.now()) + ".csv", "\ufeff" + csv, "text/csv")){ toast("Spreadsheet saved"); return; }
+    try{ await navigator.clipboard.writeText(csv); toast("Copied as text. Paste it into a spreadsheet."); }
+    catch(e2){ toast("Couldn't save the file here"); }
+  }
+}
+
+/* ---------- page wiring ---------- */
+document.querySelectorAll("[data-open]").forEach(function(b){
+  b.addEventListener("click", function(){ openSheet(b.getAttribute("data-open"), null); });
+});
+$("gear").addEventListener("click", function(){ openSheet("settings", null); });
+$("segLog").addEventListener("click", function(){ state.view = "log"; render(); });
+$("segPat").addEventListener("click", function(){ state.view = "pat"; render(); window.scrollTo(0, 0); });
+$("segSleep").addEventListener("click", function(){ state.view = "sleep"; render(); window.scrollTo(0, 0); });
+$("prevDay").addEventListener("click", function(){ state.day = shiftKey(state.day, -1); render(); });
+$("nextDay").addEventListener("click", function(){ var td = dayKey(Date.now()); if(state.day < td){ state.day = shiftKey(state.day, 1); render(); } });
+$("dayPick").addEventListener("change", function(e){ if(e.target.value){ var td = dayKey(Date.now()); state.day = e.target.value > td ? td : e.target.value; render(); } });
+function quickWater(oz, size){
+  if(state.day !== dayKey(Date.now())){ openSheet("drink", null, {drink: "Water", oz: oz, size: size || ""}); return; }
+  var e = {id: uid("e_"), type: "drink", t: Date.now(), drink: "Water", size: size || "", oz: oz, note: ""};
+  saveEntry(e); render();
+  toast("Added " + oz + " oz water", function(){ removeEntry(e.id); render(); });
+}
+$("main").addEventListener("click", function(e){
+  var q = e.target.closest("[data-quick]");
+  if(q){ quickWater(+q.getAttribute("data-quick"), q.getAttribute("data-size") || ""); return; }
+  var op = e.target.closest("[data-open]");
+  if(op){ openSheet(op.getAttribute("data-open"), null, {nap: op.hasAttribute("data-nap"), check: op.getAttribute("data-check") || ""}); return; }
+  var row = e.target.closest(".ev");
+  if(!row) return;
+  var en = null;
+  state.entries.forEach(function(x){ if(x.id === row.getAttribute("data-id")) en = x; });
+  if(en) openSheet(en.type, en);
+});
+$("main").addEventListener("keydown", function(e){
+  if((e.key === "Enter" || e.key === " ") && e.target.classList && e.target.classList.contains("ev")){ e.preventDefault(); e.target.click(); }
+});
+
+loadLocal();
+render();
+connect();
+})();
+</script>
+</body>
+</html>
